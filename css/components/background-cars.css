@@ -1,0 +1,54 @@
+.transport-bg {
+    position: fixed;
+    bottom: 0;
+    font-size: 20px;
+    z-index: 0;
+    opacity: 0.03;
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+    will-change: transform;
+}
+
+.transport-right {
+    animation: moveRight linear infinite;
+}
+
+.transport-left {
+    animation: moveLeft linear infinite;
+}
+
+@keyframes moveRight {
+    0% { transform: translateX(-200px) scaleX(1) translateZ(0); }
+    100% { transform: translateX(calc(100vw + 200px)) scaleX(1) translateZ(0); }
+}
+
+@keyframes moveLeft {
+    0% { transform: translateX(calc(100vw + 200px)) scaleX(-1) translateZ(0); }
+    100% { transform: translateX(-200px) scaleX(-1) translateZ(0); }
+}
+
+.transport-slow { animation-duration: 40s; }
+.transport-medium { animation-duration: 30s; }
+.transport-fast { animation-duration: 20s; }
+
+.transport-y-1 { bottom: 5%; }
+.transport-y-2 { bottom: 15%; }
+.transport-y-3 { bottom: 25%; }
+.transport-y-4 { bottom: 35%; }
+.transport-y-5 { bottom: 45%; }
+.transport-y-6 { bottom: 55%; }
+.transport-y-7 { bottom: 65%; }
+.transport-y-8 { bottom: 75%; }
+
+.transport-small { font-size: 14px; }
+.transport-medium-size { font-size: 20px; }
+.transport-large { font-size: 30px; }
+
+@media (max-width: 480px) {
+    .transport-bg { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .transport-bg { display: none !important; }
+}

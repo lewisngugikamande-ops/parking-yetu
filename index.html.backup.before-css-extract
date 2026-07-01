@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Parking Yetu - Smart Parking</title>
+    <meta name="theme-color" content="#6C3CE1">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+    <!-- ==========================================
+    AUTH SCREEN
+    ========================================== -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-box">
+            <h2>🚗 Parking Yetu</h2>
+            <p class="sub" id="authSubtitle">Smart Parking Platform</p>
+
+            <div id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email Address">
+                <input type="password" id="loginPassword" placeholder="Password">
+                <div class="auth-error" id="loginError">Invalid credentials</div>
+                <button onclick="handleLogin()" class="btn-primary">🚀 Login</button>
+                <div class="auth-switch">
+                    Don't have an account? <span onclick="switchAuthMode('register')">Register</span>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display:none;">
+                <input type="text" id="registerName" placeholder="Full Name">
+                <input type="email" id="registerEmail" placeholder="Email Address">
+                <input type="password" id="registerPassword" placeholder="Password (min 6 chars)">
+                <select id="registerRole">
+                    <option value="admin">👨‍💼 Admin</option>
+                    <option value="security_manager">👔 Security Manager</option>
+                    <option value="guard">🛡️ Security Guard</option>
+                    <option value="receptionist">📋 Receptionist</option>
+                    <option value="driver">🚗 Driver</option>
+                </select>
+                <div class="auth-error" id="registerError">Registration failed</div>
+                <button onclick="handleRegister()" class="btn-primary">✨ Register</button>
+                <div class="auth-switch">
+                    Already have an account? <span onclick="switchAuthMode('login')">Login</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+    MAIN APP
+    ========================================== -->
+    <div id="appContainer" style="display:none;">
+
+        <!-- Hamburger -->
+        <div class="hamburger" id="hamburgerBtn" onclick="toggleNav()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <!-- Nav Overlay -->
+        <div class="nav-overlay" id="navOverlay" onclick="closeNav()"></div>
+
+        <!-- Nav Drawer -->
+        <div class="nav-drawer" id="navDrawer">
+            <div class="drawer-header">
+                <span class="logo">🚗 Parking Yetu</span>
+                <button class="close-btn" onclick="closeNav()">✕</button>
+            </div>
+
+            <div class="nav-item active" data-view="entry" onclick="switchView('entry')">
+                <span class="icon">🚗</span>
+                <div>
+                    <div class="label">Entry</div>
+                    <div class="desc">Self Check-in</div>
+                </div>
+            </div>
+
+            <div class="nav-item" data-view="security" onclick="switchView('security')">
+                <span class="icon">🛡️</span>
+                <div>
+                    <div class="label">Security</div>
+                    <div class="desc">Security Hub</div>
+                </div>
+            </div>
+
+            <div class="nav-item" data-view="admin" onclick="switchView('admin')">
+                <span class="icon">👨‍💼</span>
+                <div>
+                    <div class="label">Admin</div>
+                    <div class="desc">Command Center</div>
+                </div>
+            </div>
+
+            <div class="nav-divider"></div>
+
+            <div class="nav-item" onclick="handleLogout()">
+                <span class="icon">🔒</span>
+                <div>
+                    <div class="label">Logout</div>
+                    <div class="desc">Sign out</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">🚗 Parking Yetu</div>
+                <div class="subtitle">✦ Smart Parking • Future Ready ✦</div>
+                <div class="status-bar">
+                    <span class="status-item online" id="connectionStatus">📶 Online</span>
+                    <span class="status-item" id="batteryStatus">🔋 100%</span>
+                </div>
+                <div class="user-badge" id="userBadge">
+                    <span id="userDisplayName">User</span>
+                    <span class="role-badge" id="userRoleBadge">Driver</span>
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alertBar" class="alert-bar"></div>
+            <div id="errorMsg" class="alert-bar" style="background:rgba(255,45,85,0.1);color:var(--danger);border-color:rgba(255,45,85,0.2);display:none;"></div>
+            <div id="successMsg" class="alert-bar" style="background:rgba(0,255,136,0.08);color:var(--accent);border-color:rgba(0,255,136,0.15);display:none;"></div>
+
+            <!-- Loading -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <div>Loading...</div>
+            </div>
+
+            <!-- ==========================================
+            VIEW: ENTRY
+            ========================================== -->
+            <div class="view-section active" id="viewEntry">
+
+                <div class="card">
+                    <h3>📍 <span class="accent">LOCATION & GATE</span></h3>
+                    <div class="grid-2">
+                        <select id="locationSelect">
+                            <option value="church_a">🏛️ Church A - Nairobi</option>
+                            <option value="church_b">🏛️ Church B - Kisumu</option>
+                            <option value="church_c">🏛️ Church C - Mombasa</option>
+                            <option value="business_a">🏢 Business A - Westlands</option>
+                            <option value="business_b">🏢 Business B - Industrial Area</option>
+                            <option value="school_a">🏫 School A - Karen</option>
+                        </select>
+                        <select id="gateSelect">
+                            <option value="Gate A">🚪 Gate A • Main</option>
+                            <option value="Gate B">🚪 Gate B • Side</option>
+                            <option value="Gate C">🚪 Gate C • Back</option>
+                        </select>
+                    </div>
+                    <div id="currentLocationDisplay" style="margin-top:10px;text-align:center;font-weight:500;color:var(--text-muted);font-size:13px;">
+                        📍 Church A - Nairobi • 🚪 Gate A
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>🚗 <span class="accent">SELF CHECK-IN</span></h3>
+                    <input type="text" id="plateInput" placeholder="PLATE NUMBER (e.g. KDG832A)" style="text-transform:uppercase;">
+                    <div class="grid-2">
+                        <input type="text" id="driverNameInput" placeholder="Driver Name">
+                        <input type="tel" id="driverPhoneInput" placeholder="Phone Number">
+                    </div>
+                    <input type="text" id="driverIdInput" placeholder="ID/Registration Number (optional)">
+
+                    <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">🚗 Vehicle Type</label>
+                    <div class="vehicle-grid" id="vehicleTypeGrid">
+                        <button class="vehicle-active" data-type="Sedan" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🚗</span> Sedan
+                        </button>
+                        <button data-type="SUV/4x4" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🚙</span> SUV
+                        </button>
+                        <button data-type="Pickup" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🛻</span> Pickup
+                        </button>
+                        <button data-type="Motorbike" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🏍️</span> Bike
+                        </button>
+                        <button data-type="Matatu" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🚐</span> Matatu
+                        </button>
+                        <button data-type="Bus" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🚌</span> Bus
+                        </button>
+                        <button data-type="Bicycle" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🚲</span> Cycle
+                        </button>
+                        <button data-type="Other" onclick="selectVehicleType(this)">
+                            <span class="vehicle-icon">🚘</span> Other
+                        </button>
+                    </div>
+                    <input type="hidden" id="selectedVehicleType" value="Sedan">
+
+                    <div class="grid-2">
+                        <button onclick="toggleVIP()" id="vipToggle" class="btn-ghost" style="font-size:13px;">
+                            ⭐ VIP: No
+                        </button>
+                        <button onclick="toggleStaff()" id="staffToggle" class="btn-ghost" style="font-size:13px;">
+                            👤 Staff: No
+                        </button>
+                    </div>
+
+                    <button onclick="parkCar()" class="btn-primary">✅ CHECK IN</button>
+                    <button onclick="takeCarPhoto()" class="btn-secondary" style="margin-top:4px;">📷 Take Photo</button>
+                    <div id="photoPreview" style="display:none;margin-top:10px;text-align:center;">
+                        <img id="carPhotoPreview" style="max-width:100%;border-radius:16px;border:1px solid var(--primary);">
+                        <p style="font-size:12px;color:var(--text-muted);">📸 Photo captured</p>
+                    </div>
+                </div>
+
+                <div class="card" id="qrCard" style="display:none;">
+                    <h3>📱 <span class="accent">EXIT QR</span></h3>
+                    <div class="qr-box" id="qrDisplay"></div>
+                    <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-top:10px;">
+                        📱 Show this QR to security when exiting
+                    </p>
+                    <div class="grid-2">
+                        <button onclick="sendQRToWhatsApp()" class="btn-secondary">📱 WhatsApp</button>
+                        <button onclick="downloadQR()" class="btn-ghost">💾 Download</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ==========================================
+            VIEW: SECURITY
+            ========================================== -->
+            <div class="view-section" id="viewSecurity">
+
+                <div class="security-login-area" id="securityLoginArea">
+                    <div class="card">
+                        <h3>🛡️ <span class="accent">SECURITY LOGIN</span></h3>
+                        <div class="grid-2">
+                            <select id="securityNameSelect">
+                                <option value="">-- Select Officer --</option>
+                                <option value="John Otieno">John Otieno</option>
+                                <option value="Peter Mwangi">Peter Mwangi</option>
+                                <option value="David Ochieng">David Ochieng</option>
+                                <option value="James Kariuki">James Kariuki</option>
+                                <option value="Michael Odhiambo">Michael Odhiambo</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <select id="shiftSelect">
+                                <option value="Day">☀️ Day (6am-6pm)</option>
+                                <option value="Night">🌙 Night (6pm-6am)</option>
+                                <option value="Weekend">📅 Weekend</option>
+                            </select>
+                        </div>
+                        <input type="text" id="customSecurityName" placeholder="Other name..." style="display:none;">
+                        <button onclick="securityLogin()" class="btn-primary">✅ LOG IN</button>
+                        <div id="securityLoginError" style="color:var(--danger);font-size:13px;display:none;margin-top:10px;text-align:center;">❌ Please select or enter a name</div>
+                    </div>
+                </div>
+
+                <div class="security-tools-area" id="securityToolsArea" style="display:none;">
+
+                    <div class="card">
+                        <h3>👤 <span class="accent">SECURITY STATUS</span></h3>
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <span id="currentSecurityDisplay" style="font-weight:600;color:var(--accent);">✅ John Otieno • Day Shift</span>
+                            <button onclick="securityLogout()" class="btn-danger" style="width:auto;padding:8px 16px;font-size:12px;">🚪 Logout</button>
+                        </div>
+                        <div class="shift-log" id="shiftLog" style="max-height:150px;overflow-y:auto;background:var(--glass-bg);padding:10px;border-radius:14px;font-size:13px;border:1px solid var(--glass-border);margin-top:10px;">
+                            <div class="shift-entry">📋 Shift log will appear here</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>🚪 <span class="accent">EXIT CAR</span></h3>
+
+                        <select id="exitGateSelect">
+                            <option value="Gate A">🚪 Gate A • Main</option>
+                            <option value="Gate B">🚪 Gate B • Side</option>
+                            <option value="Gate C">🚪 Gate C • Back</option>
+                        </select>
+
+                        <button onclick="toggleScanner()" class="btn-secondary">📷 SCAN QR CODE</button>
+
+                        <div class="scanner-container" id="scannerContainer">
+                            <div id="qrScanner" class="scanner-status">📷 Camera will appear here</div>
+                            <div id="scannedData" class="scanned-data"></div>
+                        </div>
+
+                        <div style="text-align:center;margin:8px 0;color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:2px;">— OR —</div>
+
+                        <input type="text" id="exitPlateInput" placeholder="ENTER PLATE MANUALLY" style="text-transform:uppercase;">
+
+                        <div id="exitPreview" style="display:none;">
+                            <div class="car-details" id="exitCarDetails" style="background:var(--glass-bg);padding:20px;border-radius:16px;border:1px solid var(--glass-border);border-left:3px solid var(--primary);margin:10px 0;">
+                                <div class="plate-display" style="font-family:'Orbitron',monospace;font-size:32px;font-weight:700;letter-spacing:3px;margin-bottom:10px;" id="exitPlateDisplay">KDG832A</div>
+                                <div class="detail-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">🕐 Entry</span>
+                                    <span class="value" id="exitTimeDisplay">10:30:15</span>
+                                </div>
+                                <div class="detail-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">📍 Entry Gate</span>
+                                    <span class="value" id="exitGateDisplay">Gate A</span>
+                                </div>
+                                <div class="detail-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">🚗 Vehicle</span>
+                                    <span class="value" id="exitVehicleDisplay">Sedan</span>
+                                </div>
+                                <div class="detail-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">👤 Driver</span>
+                                    <span class="value" id="exitDriverDisplay">John Otieno</span>
+                                </div>
+                                <div class="detail-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">📱 Phone</span>
+                                    <span class="value" id="exitPhoneDisplay">0712345678</span>
+                                </div>
+                                <div class="detail-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">⏱️ Duration</span>
+                                    <span class="value highlight" style="color:var(--secondary);font-weight:700;font-size:24px;" id="exitDurationDisplay">45 minutes</span>
+                                </div>
+                                <div class="detail-row" id="exitVIPRow" style="display:none;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">⭐ VIP</span>
+                                    <span class="value" style="color:#FFD700;font-weight:700;">Yes</span>
+                                </div>
+                                <div class="detail-row" id="exitStaffRow" style="display:none;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--glass-border);">
+                                    <span class="label" style="color:var(--text-muted);">👤 Staff</span>
+                                    <span class="value" style="color:#00D4FF;font-weight:700;">Yes</span>
+                                </div>
+                                <div id="exitPhotoPreview" style="margin-top:10px;display:none;">
+                                    <img id="exitCarPhoto" style="max-width:100%;border-radius:16px;border:1px solid var(--primary);">
+                                    <p style="font-size:12px;color:var(--text-muted);">📸 Entry photo</p>
+                                </div>
+                                <div id="exitAlert" style="margin-top:10px;padding:12px;border-radius:14px;display:none;font-weight:600;border:1px solid transparent;"></div>
+                            </div>
+
+                            <div class="action-dropdown">
+                                <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-bottom:4px;">🔧 Action</label>
+                                <select id="exitActionSelect" style="padding:12px 16px;font-size:14px;border-radius:14px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);font-family:'Inter',sans-serif;width:100%;cursor:pointer;">
+                                    <option value="release">✅ Release Car (Normal Exit)</option>
+                                    <option value="warning">⚠️ Warning Issued</option>
+                                    <option value="note">📝 Add Note</option>
+                                    <option value="flag">🚨 Flag Suspicious</option>
+                                    <option value="hold">🔒 Hold for Admin</option>
+                                    <option value="notify">📱 Notify Driver</option>
+                                </select>
+                            </div>
+
+                            <div class="comment-box">
+                                <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-bottom:4px;margin-top:10px;">💬 Comment / Note</label>
+                                <textarea id="exitCommentInput" placeholder="Enter any notes or comments..." style="min-height:80px;resize:vertical;font-size:14px;padding:12px 16px;font-family:'Inter',sans-serif;width:100%;border-radius:16px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);"></textarea>
+                            </div>
+
+                            <div class="grid-2" style="margin-top:12px;">
+                                <button onclick="confirmExit()" class="btn-success">✅ CONFIRM ACTION</button>
+                                <button onclick="adminOverrideExit()" class="btn-danger">🔓 OVERRIDE</button>
+                            </div>
+                        </div>
+
+                        <button onclick="searchForExit()" class="btn-secondary" style="margin-top:8px;">🔍 Find Car</button>
+                    </div>
+
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <h3>📋 <span class="accent">PARKED CARS</span></h3>
+                            <button onclick="refreshLog()" class="btn-ghost" style="width:auto;padding:8px 16px;font-size:12px;">🔄 Refresh</button>
+                        </div>
+                        <div class="log" id="logDisplay">📋 No cars parked</div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📋 <span class="accent">TODAY'S EXITS</span></h3>
+                        <div id="todayExits" style="max-height:200px;overflow-y:auto;padding:4px;">
+                            <p style="color:var(--text-muted);text-align:center;font-size:13px;">No exits recorded today</p>
+                        </div>
+                        <div class="grid-2" style="margin-top:8px;">
+                            <button onclick="refreshTodayExits()" class="btn-ghost" style="font-size:13px;">🔄 Refresh</button>
+                            <button onclick="exportTodayExits()" class="btn-secondary" style="font-size:13px;">📥 Export</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 <span class="accent">QUICK STATS</span></h3>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-number" id="securityExitsToday">0</div>
+                                <div class="stat-label">Exits Today</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="securityAvgTime">0s</div>
+                                <div class="stat-label">Avg Exit Time</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-number" id="securityOverstay">0</div>
+                                <div class="stat-label">Overstays</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+            VIEW: ADMIN
+            ========================================== -->
+            <div class="view-section" id="viewAdmin">
+
+                <div class="card">
+                    <h3>🚨 <span class="accent">LIVE ALERT FEED</span></h3>
+                    <div class="alert-feed" id="alertFeed" style="max-height:200px;overflow-y:auto;padding:4px;">
+                        <p style="color:var(--text-muted);text-align:center;font-size:13px;">No alerts yet</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📊 <span class="accent">DASHBOARD</span></h3>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-number" id="statTotal">0</div>
+                            <div class="stat-label">Total Entries</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" id="statActive">0</div>
+                            <div class="stat-label">Currently Parked</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" id="statAvgTime">0m</div>
+                            <div class="stat-label">Avg Duration</div>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-number" id="statVIP">0</div>
+                            <div class="stat-label">⭐ VIP</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" id="statStaff">0</div>
+                            <div class="stat-label">👤 Staff</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number" id="statOverstay">0</div>
+                            <div class="stat-label">⚠️ Overstay</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⚙️ <span class="accent">ADMIN CONTROLS</span></h3>
+                    <div class="grid-2">
+                        <button onclick="showUserManagement()" class="btn-primary">👥 User Management</button>
+                        <button onclick="showRoster()" class="btn-secondary">📋 Roster</button>
+                        <button onclick="exportCSV()" class="btn-ghost">📥 CSV Export</button>
+                        <button onclick="clearAllData()" class="btn-danger">🗑️ Clear Data</button>
+                    </div>
+                </div>
+
+                <div class="card" id="userManagementPanel" style="display:none;">
+                    <h3>👥 <span class="accent">USER MANAGEMENT</span></h3>
+                    <div class="grid-2">
+                        <input type="email" id="newUserEmail" placeholder="New user email">
+                        <input type="password" id="newUserPassword" placeholder="Password (min 6 chars)">
+                    </div>
+                    <div class="grid-2">
+                        <input type="text" id="newUserName" placeholder="Full name">
+                        <select id="newUserRole">
+                            <option value="admin">👨‍💼 Admin</option>
+                            <option value="security_manager">👔 Security Manager</option>
+                            <option value="guard">🛡️ Security Guard</option>
+                            <option value="receptionist">📋 Receptionist</option>
+                            <option value="driver">🚗 Driver</option>
+                        </select>
+                    </div>
+                    <div class="grid-2">
+                        <select id="newUserLocation">
+                            <option value="church_a">🏛️ Church A - Nairobi</option>
+                            <option value="church_b">🏛️ Church B - Kisumu</option>
+                            <option value="church_c">🏛️ Church C - Mombasa</option>
+                            <option value="business_a">🏢 Business A - Westlands</option>
+                            <option value="business_b">🏢 Business B - Industrial Area</option>
+                            <option value="school_a">🏫 School A - Karen</option>
+                        </select>
+                        <select id="newUserGate">
+                            <option value="gate_a">🚪 Gate A - Main</option>
+                            <option value="gate_b">🚪 Gate B - Side</option>
+                            <option value="gate_c">🚪 Gate C - Back</option>
+                            <option value="all">🌐 All Gates</option>
+                        </select>
+                    </div>
+                    <div class="grid-2">
+                        <select id="newUserShift">
+                            <option value="Day">☀️ Day (6am-6pm)</option>
+                            <option value="Night">🌙 Night (6pm-6am)</option>
+                            <option value="Weekend">📅 Weekend</option>
+                            <option value="Rotating">🔄 Rotating</option>
+                        </select>
+                        <button onclick="createUser()" class="btn-primary">✅ Create User</button>
+                    </div>
+                    <h4 style="margin-top:20px;color:var(--text-secondary);">📋 Current Users</h4>
+                    <div id="userList" style="margin-top:10px;max-height:300px;overflow-y:auto;background:var(--glass-bg);padding:10px;border-radius:14px;border:1px solid var(--glass-border);">
+                        <p style="color:var(--text-muted);text-align:center;font-size:13px;">Loading users...</p>
+                    </div>
+                </div>
+
+                <div class="card" id="rosterPanel" style="display:none;">
+                    <h3>📋 <span class="accent">SECURITY ROSTER</span></h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                        <button onclick="previousWeek()" class="btn-ghost" style="width:auto;padding:8px 16px;font-size:12px;">⬅️ Prev</button>
+                        <span id="rosterWeek" style="flex:1;text-align:center;font-weight:600;color:var(--text-secondary);padding:8px;">Week of June 24-30, 2024</span>
+                        <button onclick="nextWeek()" class="btn-ghost" style="width:auto;padding:8px 16px;font-size:12px;">Next ➡️</button>
+                    </div>
+                    <div id="rosterGrid" style="overflow-x:auto;">
+                        <p style="color:var(--text-muted);text-align:center;font-size:13px;">Loading roster...</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📱 <span class="accent">ENTRANCE QR</span></h3>
+                    <p style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">Print this QR and place at the entrance gate</p>
+                    <div class="qr-box" id="adminQRDisplay">
+                        <img id="adminQRImage" src="" alt="Entrance QR">
+                    </div>
+                    <div class="grid-2" style="margin-top:10px;">
+                        <button onclick="downloadAdminQR()" class="btn-secondary">💾 Download</button>
+                        <button onclick="printAdminQR()" class="btn-ghost">🖨️ Print</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>💾 <span class="accent">BACKUP & RESTORE</span></h3>
+                    <div class="backup-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button onclick="backupData()" class="btn-secondary">📤 Backup</button>
+                        <div class="file-input-wrapper" style="flex:1;min-width:100px;position:relative;">
+                            <button class="btn-ghost">📥 Restore</button>
+                            <input type="file" id="restoreFileInput" accept=".json" onchange="restoreData(event)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📈 <span class="accent">PEAK HOURS</span></h3>
+                    <div class="chart-container" style="position:relative;height:250px;margin:15px 0;background:var(--glass-bg);padding:15px;border-radius:16px;border:1px solid var(--glass-border);">
+                        <canvas id="peakHoursChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📅 <span class="accent">CUSTOM REPORT</span></h3>
+                    <div class="date-range" style="display:flex;gap:10px;margin:10px 0;">
+                        <input type="date" id="reportStartDate">
+                        <input type="date" id="reportEndDate">
+                    </div>
+                    <button onclick="generateCustomReport()" class="btn-primary">📊 Generate</button>
+                    <div id="customReportResults" style="margin-top:10px;"></div>
+                </div>
+
+                <div class="card">
+                    <h3>📊 <span class="accent">ANALYTICS</span></h3>
+                    <div class="tab-container" style="display:flex;gap:4px;flex-wrap:wrap;margin:10px 0;">
+                        <button class="active" onclick="showTab('dashboard')" style="flex:1;min-width:50px;padding:10px 8px;font-size:11px;font-weight:600;background:var(--glass-bg);color:var(--text-secondary);border:1px solid var(--glass-border);border-radius:14px;cursor:pointer;text-transform:uppercase;">Status</button>
+                        <button onclick="showTab('location')" style="flex:1;min-width:50px;padding:10px 8px;font-size:11px;font-weight:600;background:var(--glass-bg);color:var(--text-secondary);border:1px solid var(--glass-border);border-radius:14px;cursor:pointer;text-transform:uppercase;">Location</button>
+                        <button onclick="showTab('duration')" style="flex:1;min-width:50px;padding:10px 8px;font-size:11px;font-weight:600;background:var(--glass-bg);color:var(--text-secondary);border:1px solid var(--glass-border);border-radius:14px;cursor:pointer;text-transform:uppercase;">Duration</button>
+                        <button onclick="showTab('vehicle')" style="flex:1;min-width:50px;padding:10px 8px;font-size:11px;font-weight:600;background:var(--glass-bg);color:var(--text-secondary);border:1px solid var(--glass-border);border-radius:14px;cursor:pointer;text-transform:uppercase;">Vehicle</button>
+                        <button onclick="showTab('daily')" style="flex:1;min-width:50px;padding:10px 8px;font-size:11px;font-weight:600;background:var(--glass-bg);color:var(--text-secondary);border:1px solid var(--glass-border);border-radius:14px;cursor:pointer;text-transform:uppercase;">Daily</button>
+                    </div>
+
+                    <div id="tab-dashboard" class="tab-content active">
+                        <div class="chart-container" style="position:relative;height:250px;margin:15px 0;background:var(--glass-bg);padding:15px;border-radius:16px;border:1px solid var(--glass-border);">
+                            <canvas id="dashboardChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="tab-location" class="tab-content" style="display:none;">
+                        <div class="chart-container" style="position:relative;height:250px;margin:15px 0;background:var(--glass-bg);padding:15px;border-radius:16px;border:1px solid var(--glass-border);">
+                            <canvas id="locationChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="tab-duration" class="tab-content" style="display:none;">
+                        <div class="chart-container" style="position:relative;height:250px;margin:15px 0;background:var(--glass-bg);padding:15px;border-radius:16px;border:1px solid var(--glass-border);">
+                            <canvas id="durationChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="tab-vehicle" class="tab-content" style="display:none;">
+                        <div class="chart-container" style="position:relative;height:250px;margin:15px 0;background:var(--glass-bg);padding:15px;border-radius:16px;border:1px solid var(--glass-border);">
+                            <canvas id="vehicleChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="tab-daily" class="tab-content" style="display:none;">
+                        <div class="chart-container" style="position:relative;height:250px;margin:15px 0;background:var(--glass-bg);padding:15px;border-radius:16px;border:1px solid var(--glass-border);">
+                            <canvas id="dailyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⭐ <span class="accent">VIP MANAGEMENT</span></h3>
+                    <div class="grid-2">
+                        <input type="text" id="vipPlateInput" placeholder="VIP plate number">
+                        <button onclick="addVIP()" class="btn-secondary" style="font-size:13px;">⭐ Add VIP</button>
+                    </div>
+                    <div id="vipList" style="margin-top:10px;max-height:100px;overflow-y:auto;background:var(--glass-bg);padding:10px;border-radius:14px;border:1px solid var(--glass-border);">
+                        <p style="color:var(--text-muted);font-size:13px;">No VIPs added yet</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>🏆 <span class="accent">SECURITY PERFORMANCE</span></h3>
+                    <div class="leaderboard" id="securityLeaderboard" style="padding:4px;">
+                        <p style="color:var(--text-muted);text-align:center;font-size:13px;">No data yet</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⏱️ <span class="accent">PARKING RULES</span></h3>
+                    <div class="grid-2">
+                        <div>
+                            <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Time Limit (mins)</label>
+                            <input type="number" id="timeLimitInput" value="180" min="30" max="1440">
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Alert At (mins)</label>
+                            <input type="number" id="alertLimitInput" value="120" min="30" max="1440">
+                        </div>
+                    </div>
+                    <button onclick="saveTimeLimit()" class="btn-secondary">💾 Save Rules</button>
+                </div>
+
+                <div class="card">
+                    <h3>📢 <span class="accent">BROADCAST</span></h3>
+                    <p style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">Send messages to all security guards</p>
+                    <button onclick="openBroadcast()" class="btn-primary">📤 Send Broadcast</button>
+                    <div id="broadcastLog" style="margin-top:10px;max-height:100px;overflow-y:auto;background:var(--glass-bg);padding:10px;border-radius:14px;border:1px solid var(--glass-border);">
+                        <p style="color:var(--text-muted);font-size:13px;">No broadcasts sent</p>
+                    </div>
+                </div>
+
+                <div class="card" style="border-color:rgba(0,212,255,0.2);">
+                    <h3>🚪 <span class="accent">GATE CONTROL</span></h3>
+                    <div class="gate-status" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--glass-bg);border-radius:14px;margin:10px 0;border:1px solid var(--glass-border);">
+                        <span class="gate-indicator closed" id="gateIndicator" style="width:12px;height:12px;border-radius:50%;display:inline-block;background:var(--danger);box-shadow:0 0 20px rgba(255,45,85,0.3);"></span>
+                        <span id="gateStatusText">Gate: Closed</span>
+                        <span style="margin-left:auto;font-size:12px;color:var(--text-muted);" id="gateLastAction">Last: --</span>
+                    </div>
+                    <div class="grid-2">
+                        <button onclick="controlGate('open')" class="btn-success" id="gateOpenBtn">🚪 Open</button>
+                        <button onclick="controlGate('close')" class="btn-danger" id="gateCloseBtn">🚪 Close</button>
+                    </div>
+                    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:6px;letter-spacing:0.5px;">
+                        🔧 Hardware Ready • Automatic Gate
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;letter-spacing:1px;">
+                <p>🚗 <strong style="color:var(--text-secondary);">Parking Yetu</strong> v3.1</p>
+                <p style="font-size:10px;opacity:0.6;margin-top:4px;">✦ Smart Parking • Future Ready ✦</p>
+            </div>
+
+        </div>
+
+        <!-- SU Buttons -->
+        <div class="su-bar" id="suBar" style="display:none;">
+            <!-- Dynamically populated -->
+        </div>
+
+    </div>
+
+    <script type="module" src="/src/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+:root {
+    --primary: #6C3CE1;
+    --primary-glow: rgba(108, 60, 225, 0.4);
+    --secondary: #00D4FF;
+    --accent: #00FF88;
+    --warning: #FF6B35;
+    --danger: #FF2D55;
+    --bg-primary: #0A0A0F;
+    --bg-secondary: #12121A;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --text-primary: #FFFFFF;
+    --text-secondary: #B8B8D0;
+    --text-muted: #6A6A8A;
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --gradient-primary: linear-gradient(135deg, #6C3CE1, #00D4FF);
+    --transition-speed: 0.3s;
+}
+
+body.light-theme {
+    --bg-primary: #F5F5FA;
+    --bg-secondary: #FFFFFF;
+    --text-primary: #1A1A2E;
+    --text-secondary: #4A4A6A;
+    --text-muted: #8A8AAA;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .header {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.08);
+}

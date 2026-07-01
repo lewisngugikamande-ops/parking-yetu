@@ -1,0 +1,56 @@
+// ============================================
+// Workstation Module - Entry Point
+// ============================================
+
+import { getSession } from '../../core/session.js';
+import { hasPermission } from '../../core/permissions.js';
+import { isFeatureEnabled } from '../../core/feature-flags.js';
+
+export default function initWorkstation() {
+    console.log('🚗 Workstation module loaded');
+    
+    const session = getSession();
+    const app = document.getElementById('app');
+    
+    if (!app) return;
+    
+    app.innerHTML = `
+        <div style="padding:20px;max-width:700px;margin:0 auto;">
+            <h2 style="font-family:Orbitron,monospace;margin-bottom:8px;">🚗 Workstation</h2>
+            <p style="color:var(--text-muted);margin-bottom:24px;">Gate operations dashboard</p>
+            
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+                <div style="background:var(--glass-bg);padding:16px 24px;border-radius:16px;flex:1;min-width:120px;border:1px solid var(--glass-border);text-align:center;">
+                    <div style="font-family:Orbitron,monospace;font-size:28px;font-weight:700;color:var(--accent);">0</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Inside</div>
+                </div>
+                <div style="background:var(--glass-bg);padding:16px 24px;border-radius:16px;flex:1;min-width:120px;border:1px solid var(--glass-border);text-align:center;">
+                    <div style="font-family:Orbitron,monospace;font-size:28px;font-weight:700;color:var(--secondary);">0</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Queue</div>
+                </div>
+                <div style="background:var(--glass-bg);padding:16px 24px;border-radius:16px;flex:1;min-width:120px;border:1px solid var(--glass-border);text-align:center;">
+                    <div style="font-family:Orbitron,monospace;font-size:28px;font-weight:700;color:var(--primary);">${session?.name || 'User'}</div>
+                    <div style="font-size:12px;color:var(--text-muted);">Operator</div>
+                </div>
+            </div>
+            
+            <div style="display:grid;gap:12px;">
+                <button onclick="alert('New Entry - Coming soon!')" class="btn-primary" style="padding:20px;font-size:18px;min-height:72px;">
+                    🟦 NEW ENTRY
+                </button>
+                <button onclick="alert('Known Vehicle - Coming soon!')" class="btn-secondary" style="padding:20px;font-size:18px;min-height:72px;">
+                    🟩 KNOWN VEHICLE
+                </button>
+                <button onclick="alert('Scan QR - Coming soon!')" class="btn-danger" style="padding:20px;font-size:18px;min-height:72px;">
+                    🟥 SCAN QR
+                </button>
+            </div>
+            
+            <div style="margin-top:16px;padding:12px 16px;background:var(--glass-bg);border-radius:12px;border:1px solid var(--glass-border);font-size:13px;color:var(--text-muted);text-align:center;">
+                🟢 Last Activity: No activity yet
+            </div>
+        </div>
+    `;
+    
+    console.log('✅ Workstation ready');
+}

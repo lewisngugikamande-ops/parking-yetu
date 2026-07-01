@@ -1,0 +1,1023 @@
+cd ~/projects/parking-yetu
+
+# This is the complete CSS from your original app
+cat > css/main.css << 'EOF'
+/* ==========================================
+   Parking Yetu - Complete CSS
+   ========================================== */
+
+:root {
+    --primary: #6C3CE1;
+    --primary-glow: rgba(108, 60, 225, 0.4);
+    --secondary: #00D4FF;
+    --accent: #00FF88;
+    --warning: #FF6B35;
+    --danger: #FF2D55;
+    --bg-primary: #0A0A0F;
+    --bg-secondary: #12121A;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --text-primary: #FFFFFF;
+    --text-secondary: #B8B8D0;
+    --text-muted: #6A6A8A;
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --gradient-primary: linear-gradient(135deg, #6C3CE1, #00D4FF);
+    --transition-speed: 0.3s;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+    font-family: 'Inter', Arial, sans-serif;
+    background: var(--bg-primary);
+    min-height: 100vh;
+    padding: 15px 15px 80px;
+    color: var(--text-primary);
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* ==========================================
+   AUTH SCREEN
+   ========================================== */
+.auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-screen.hidden {
+    display: none;
+}
+
+.auth-box {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 32px;
+    padding: 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+}
+
+.auth-box h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    text-align: center;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-box .sub {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+}
+
+.auth-box input,
+.auth-box select {
+    width: 100%;
+    padding: 14px 18px;
+    margin: 8px 0;
+    font-size: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    min-height: 52px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.auth-box input:focus,
+.auth-box select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(108, 60, 225, 0.15);
+}
+
+.auth-box .auth-error {
+    color: var(--danger);
+    font-size: 14px;
+    text-align: center;
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255, 45, 85, 0.08);
+    border-radius: 12px;
+}
+
+.auth-box .auth-error.show {
+    display: block;
+}
+
+.auth-box .auth-switch {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: 16px;
+}
+
+.auth-box .auth-switch span {
+    color: var(--secondary);
+    cursor: pointer;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+/* ==========================================
+   BACKGROUND TRANSPORT
+   ========================================== */
+.transport-bg {
+    position: fixed;
+    bottom: 0;
+    font-size: 24px;
+    z-index: 0;
+    opacity: 0.22;
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+    will-change: transform;
+}
+
+.transport-right {
+    animation: moveRight linear infinite;
+}
+
+.transport-left {
+    animation: moveLeft linear infinite;
+}
+
+@keyframes moveRight {
+    0% { transform: translateX(-200px) scaleX(1) translateZ(0); }
+    100% { transform: translateX(calc(100vw + 200px)) scaleX(1) translateZ(0); }
+}
+
+@keyframes moveLeft {
+    0% { transform: translateX(calc(100vw + 200px)) scaleX(-1) translateZ(0); }
+    100% { transform: translateX(-200px) scaleX(-1) translateZ(0); }
+}
+
+.transport-slow { animation-duration: 40s; }
+.transport-medium { animation-duration: 30s; }
+.transport-fast { animation-duration: 20s; }
+
+.transport-y-1 { bottom: 5%; }
+.transport-y-2 { bottom: 15%; }
+.transport-y-3 { bottom: 25%; }
+.transport-y-4 { bottom: 35%; }
+.transport-y-5 { bottom: 45%; }
+.transport-y-6 { bottom: 55%; }
+.transport-y-7 { bottom: 65%; }
+.transport-y-8 { bottom: 75%; }
+
+.transport-small { font-size: 14px; }
+.transport-medium-size { font-size: 24px; }
+.transport-large { font-size: 30px; }
+
+/* ==========================================
+   CARDS
+   ========================================== */
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+    will-change: transform;
+}
+
+.card:hover {
+    transform: translateY(-4px) translateZ(0);
+    border-color: rgba(108, 60, 225, 0.2);
+    box-shadow: 0 12px 40px rgba(108, 60, 225, 0.15);
+}
+
+.card h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.card h3 .accent {
+    color: var(--secondary);
+}
+
+/* ==========================================
+   BUTTONS
+   ========================================== */
+button {
+    width: 100%;
+    padding: 16px;
+    margin: 6px 0;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    min-height: 56px;
+    position: relative;
+    overflow: hidden;
+    will-change: transform;
+}
+
+button:hover {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 4px 20px rgba(108, 60, 225, 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #00D4FF, #00FF88);
+    color: var(--bg-primary);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #FF2D55, #FF6B6B);
+    color: white;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #00FF88, #00D4AA);
+    color: var(--bg-primary);
+}
+
+.btn-ghost {
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+}
+
+/* ==========================================
+   LAYOUT
+   ========================================== */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.stat-box {
+    background: var(--glass-bg);
+    padding: 15px 10px;
+    border-radius: 16px;
+    text-align: center;
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.stat-box .stat-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-box .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ==========================================
+   VEHICLE GRID
+   ========================================== */
+.vehicle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.vehicle-grid button {
+    padding: 14px 6px;
+    font-size: 13px;
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 72px;
+    text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
+}
+
+.vehicle-grid button.vehicle-active {
+    border-color: var(--primary);
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.vehicle-grid button .vehicle-icon {
+    display: block;
+    font-size: 28px;
+    margin-bottom: 4px;
+}
+
+/* ==========================================
+   THEME TOGGLE
+   ========================================== */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 80px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: auto;
+    padding: 0;
+}
+
+.theme-toggle:hover {
+    transform: rotate(30deg) scale(1.1);
+    border-color: var(--primary);
+}
+
+/* ==========================================
+   LIGHT THEME
+   ========================================== */
+body.light-theme {
+    --bg-primary: #F5F5FA;
+    --bg-secondary: #FFFFFF;
+    --text-primary: #1A1A2E;
+    --text-secondary: #4A4A6A;
+    --text-muted: #8A8AAA;
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .header {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .stat-box .stat-number {
+        font-size: 22px;
+    }
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+    .vehicle-grid {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+    .vehicle-grid button {
+        font-size: 11px;
+        padding: 12px 4px;
+        min-height: 64px;
+    }
+    .theme-toggle {
+        top: 20px;
+        right: 70px;
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+    .transport-bg {
+        display: none !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .vehicle-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .transport-bg {
+        display: none !important;
+    }
+    .card:hover {
+        transform: none !important;
+    }
+    button:hover {
+        transform: none !important;
+    }
+}
+EOF
+
+echo "✅ CSS restored!"
+wc -l css/main.css
+ls -lh css/main.css
+
+
+body.light-theme .transport-bg {
+    color: rgba(0, 0, 0, 0.25);
+    opacity: 0.10;
+}
+
+/* ==========================================
+   Fix Button Text Visibility
+   ========================================== */
+
+/* Force buttons to have readable text */
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-success {
+    color: #FFFFFF !important;
+}
+
+/* Light theme button fixes */
+body.light-theme .btn-primary,
+body.light-theme .btn-secondary,
+body.light-theme .btn-danger,
+body.light-theme .btn-success {
+    color: #FFFFFF !important;
+}
+
+/* Ensure button text is always visible */
+button {
+    color: #FFFFFF !important;
+}
+
+/* Fix dark mode text */
+.btn-primary {
+    background: var(--gradient-primary) !important;
+    color: #FFFFFF !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #00D4FF, #00FF88) !important;
+    color: #1A1A2E !important;  /* Dark text on light gradient */
+}
+
+/* Light theme overrides */
+body.light-theme .btn-primary {
+    color: #FFFFFF !important;
+}
+
+body.light-theme .btn-secondary {
+    color: #1A1A2E !important;
+}
+
+/* Generic button text */
+button {
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+/* ==========================================
+   Auth Box - Better Contrast
+   ========================================== */
+
+.auth-box {
+    background: rgba(20, 20, 40, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.auth-box input,
+.auth-box select {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+}
+
+.auth-box input::placeholder {
+    color: #8A8AAA !important;
+}
+
+/* Light theme auth box */
+body.light-theme .auth-box {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .auth-box input,
+body.light-theme .auth-box select {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: #1A1A2E !important;
+}
+
+body.light-theme .auth-box input::placeholder {
+    color: #8A8AAA !important;
+}
+
+body.light-theme .auth-box h2 {
+    -webkit-text-fill-color: #6C3CE1 !important;
+}
+
+/* ==========================================
+   Mobile Fixes
+   ========================================== */
+
+@media (max-width: 480px) {
+    .auth-box {
+        padding: 24px 16px !important;
+        margin: 10px !important;
+    }
+    
+    .btn-primary,
+    .btn-secondary,
+    .btn-danger,
+    .btn-success {
+        font-size: 14px !important;
+        padding: 14px !important;
+        min-height: 48px !important;
+    }
+    
+    .auth-box h2 {
+        font-size: 22px !important;
+    }
+}
+
+/* ==========================================
+   LOGIN TEXT - HIGH CONTRAST
+   ========================================== */
+
+.auth-box h2 {
+    font-family: 'Orbitron', 'Courier New', monospace;
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 4px;
+    /* Force gradient to be visible on dark background */
+    background: linear-gradient(135deg, #6C3CE1, #00D4FF) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    color: #6C3CE1 !important; /* Fallback */
+}
+
+.auth-box .sub {
+    text-align: center;
+    color: #B8B8D0 !important;
+    font-size: 14px;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+    font-weight: 300;
+}
+
+/* Login/Register labels */
+.auth-box label {
+    color: #B8B8D0 !important;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Input fields - light on dark */
+.auth-box input,
+.auth-box select {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #FFFFFF !important;
+    font-size: 16px;
+}
+
+.auth-box input:focus,
+.auth-box select:focus {
+    border-color: #6C3CE1 !important;
+    box-shadow: 0 0 20px rgba(108, 60, 225, 0.2) !important;
+}
+
+.auth-box input::placeholder {
+    color: #8A8AAA !important;
+    font-weight: 300;
+}
+
+/* Auth switch text */
+.auth-box .auth-switch {
+    color: #8A8AAA !important;
+    font-size: 14px;
+}
+
+.auth-box .auth-switch span {
+    color: #00D4FF !important;
+    cursor: pointer;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.auth-box .auth-switch span:hover {
+    color: #6C3CE1 !important;
+}
+
+/* Error messages */
+.auth-box .auth-error {
+    color: #FF2D55 !important;
+    background: rgba(255, 45, 85, 0.1) !important;
+    border: 1px solid rgba(255, 45, 85, 0.2) !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+}
+
+/* ==========================================
+   LIGHT THEME - LOGIN TEXT
+   ========================================== */
+
+body.light-theme .auth-box h2 {
+    background: linear-gradient(135deg, #6C3CE1, #00D4FF) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+body.light-theme .auth-box .sub {
+    color: #4A4A6A !important;
+}
+
+body.light-theme .auth-box input,
+body.light-theme .auth-box select {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: #1A1A2E !important;
+}
+
+body.light-theme .auth-box input::placeholder {
+    color: #8A8AAA !important;
+}
+
+body.light-theme .auth-box .auth-switch {
+    color: #6A6A8A !important;
+}
+
+body.light-theme .auth-box .auth-switch span {
+    color: #6C3CE1 !important;
+}
+
+/* ==========================================
+   LOGIN PAGE BACKGROUND
+   ========================================== */
+
+.auth-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+    background: var(--bg-primary) !important;
+}
+
+/* Dark background for login */
+body:not(.light-theme) .auth-screen {
+    background: #0A0A0F !important;
+}
+
+body.light-theme .auth-screen {
+    background: #F5F5FA !important;
+}
+
+/* Auth box glass effect */
+.auth-box {
+    background: rgba(20, 20, 40, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.light-theme .auth-box {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ==========================================
+   WALLPAPER - VISIBLE IN ALL MODES
+   ========================================== */
+
+/* Base wallpaper */
+.transport-bg {
+    position: fixed;
+    bottom: 0;
+    font-size: 28px; /* Bigger cars */
+    z-index: 0;
+    opacity: 0.25; /* Increased from 0.03 */
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+    will-change: transform;
+    color: rgba(255, 255, 255, 0.5); /* Brighter */
+    text-shadow: 0 0 20px rgba(108, 60, 225, 0.2);
+}
+
+/* Dark mode - visible and bright */
+body:not(.light-theme) .transport-bg {
+    color: rgba(255, 255, 255, 0.4) !important;
+    opacity: 0.15 !important;
+    text-shadow: 0 0 30px rgba(108, 60, 225, 0.3);
+}
+
+/* Light mode - also visible */
+body.light-theme .transport-bg {
+    color: rgba(0, 0, 0, 0.25) !important;
+    opacity: 0.12 !important;
+    text-shadow: 0 0 20px rgba(108, 60, 225, 0.1);
+}
+
+/* Individual car classes with different opacities */
+.transport-y-1 { bottom: 5%; opacity: 0.22; }
+.transport-y-2 { bottom: 13%; opacity: 0.14; }
+.transport-y-3 { bottom: 21%; opacity: 0.16; }
+.transport-y-4 { bottom: 29%; opacity: 0.18; }
+.transport-y-5 { bottom: 37%; opacity: 0.20; }
+.transport-y-6 { bottom: 45%; opacity: 0.22; }
+.transport-y-7 { bottom: 53%; opacity: 0.24; }
+.transport-y-8 { bottom: 61%; opacity: 0.26; }
+
+/* Dark mode - even brighter */
+body:not(.light-theme) .transport-y-1 { opacity: 0.20 !important; }
+body:not(.light-theme) .transport-y-2 { opacity: 0.22 !important; }
+body:not(.light-theme) .transport-y-3 { opacity: 0.25 !important; }
+body:not(.light-theme) .transport-y-4 { opacity: 0.28 !important; }
+body:not(.light-theme) .transport-y-5 { opacity: 0.30 !important; }
+body:not(.light-theme) .transport-y-6 { opacity: 0.32 !important; }
+body:not(.light-theme) .transport-y-7 { opacity: 0.34 !important; }
+body:not(.light-theme) .transport-y-8 { opacity: 0.36 !important; }
+
+/* Mobile visibility */
+@media (max-width: 480px) {
+    .transport-bg {
+        font-size: 18px !important;
+        opacity: 0.10 !important;
+    }
+    body:not(.light-theme) .transport-bg {
+        opacity: 0.12 !important;
+    }
+}
+
+/* Add glow behind cars for dark mode */
+body:not(.light-theme) .transport-bg::before {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, rgba(108, 60, 225, 0.05), transparent);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ==========================================
+   WALLPAPER - ALWAYS VISIBLE
+   ========================================== */
+
+/* Base wallpaper - ALWAYS visible */
+.transport-bg {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 28px;
+    z-index: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+    will-change: transform;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Dark mode - bright cars */
+.transport-bg {
+    color: rgba(255, 255, 255, 0.25) !important;
+    opacity: 0.12 !important;
+    text-shadow: 0 0 30px rgba(108, 60, 225, 0.2);
+}
+
+/* Light mode - dark cars */
+body.light-theme .transport-bg {
+    color: rgba(0, 0, 0, 0.20) !important;
+    opacity: 0.10 !important;
+    text-shadow: 0 0 20px rgba(108, 60, 225, 0.05);
+}
+
+/* Cars by layer - progressive visibility */
+.transport-y-1 { bottom: 5%; opacity: 0.15 !important; }
+.transport-y-2 { bottom: 13%; opacity: 0.18 !important; }
+.transport-y-3 { bottom: 21%; opacity: 0.21 !important; }
+.transport-y-4 { bottom: 29%; opacity: 0.24 !important; }
+.transport-y-5 { bottom: 37%; opacity: 0.27 !important; }
+.transport-y-6 { bottom: 45%; opacity: 0.30 !important; }
+.transport-y-7 { bottom: 53%; opacity: 0.33 !important; }
+.transport-y-8 { bottom: 61%; opacity: 0.36 !important; }
+
+/* Dark mode - even brighter */
+body:not(.light-theme) .transport-y-1 { opacity: 0.20 !important; }
+body:not(.light-theme) .transport-y-2 { opacity: 0.23 !important; }
+body:not(.light-theme) .transport-y-3 { opacity: 0.26 !important; }
+body:not(.light-theme) .transport-y-4 { opacity: 0.29 !important; }
+body:not(.light-theme) .transport-y-5 { opacity: 0.32 !important; }
+body:not(.light-theme) .transport-y-6 { opacity: 0.35 !important; }
+body:not(.light-theme) .transport-y-7 { opacity: 0.38 !important; }
+body:not(.light-theme) .transport-y-8 { opacity: 0.42 !important; }
+
+/* Light mode - visible but subtle */
+body.light-theme .transport-y-1 { opacity: 0.12 !important; }
+body.light-theme .transport-y-2 { opacity: 0.14 !important; }
+body.light-theme .transport-y-3 { opacity: 0.16 !important; }
+body.light-theme .transport-y-4 { opacity: 0.18 !important; }
+body.light-theme .transport-y-5 { opacity: 0.20 !important; }
+body.light-theme .transport-y-6 { opacity: 0.22 !important; }
+body.light-theme .transport-y-7 { opacity: 0.24 !important; }
+body.light-theme .transport-y-8 { opacity: 0.26 !important; }
+
+/* Size classes */
+.transport-small { font-size: 16px; }
+.transport-medium-size { font-size: 22px; }
+.transport-large { font-size: 30px; }
+.transport-huge { font-size: 38px; }
+
+/* Car animations - always running */
+.transport-right {
+    animation: moveRight linear infinite;
+}
+
+.transport-left {
+    animation: moveLeft linear infinite;
+}
+
+@keyframes moveRight {
+    0% { transform: translateX(-200px) scaleX(1); }
+    100% { transform: translateX(calc(100vw + 200px)) scaleX(1); }
+}
+
+@keyframes moveLeft {
+    0% { transform: translateX(calc(100vw + 200px)) scaleX(-1); }
+    100% { transform: translateX(-200px) scaleX(-1); }
+}
+
+/* Speed variations */
+.transport-slow { animation-duration: 45s; }
+.transport-medium { animation-duration: 30s; }
+.transport-fast { animation-duration: 20s; }
+.transport-very-fast { animation-duration: 14s; }
+
+/* ==========================================
+   FULL SCREEN RESPONSIVE
+   ========================================== */
+
+/* All screens - 100% coverage */
+html, body {
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+    .transport-bg {
+        font-size: 32px;
+    }
+    .transport-y-1 { bottom: 5%; }
+    .transport-y-2 { bottom: 13%; }
+    .transport-y-3 { bottom: 21%; }
+    .transport-y-4 { bottom: 29%; }
+    .transport-y-5 { bottom: 37%; }
+    .transport-y-6 { bottom: 45%; }
+    .transport-y-7 { bottom: 53%; }
+    .transport-y-8 { bottom: 61%; }
+}
+
+/* Tablet */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .transport-bg {
+        font-size: 26px;
+    }
+    .transport-y-1 { bottom: 4%; }
+    .transport-y-2 { bottom: 12%; }
+    .transport-y-3 { bottom: 20%; }
+    .transport-y-4 { bottom: 28%; }
+    .transport-y-5 { bottom: 36%; }
+    .transport-y-6 { bottom: 44%; }
+    .transport-y-7 { bottom: 52%; }
+    .transport-y-8 { bottom: 60%; }
+}
+
+/* Mobile Landscape */
+@media (max-width: 768px) and (min-width: 481px) {
+    .transport-bg {
+        font-size: 20px;
+    }
+    .transport-y-1 { bottom: 3%; }
+    .transport-y-2 { bottom: 11%; }
+    .transport-y-3 { bottom: 19%; }
+    .transport-y-4 { bottom: 27%; }
+    .transport-y-5 { bottom: 35%; }
+    .transport-y-6 { bottom: 43%; }
+    .transport-y-7 { bottom: 51%; }
+    .transport-y-8 { bottom: 59%; }
+}
+
+/* Mobile Portrait */
+@media (max-width: 480px) {
+    .transport-bg {
+        font-size: 16px;
+    }
+    .transport-y-1 { bottom: 2%; }
+    .transport-y-2 { bottom: 10%; }
+    .transport-y-3 { bottom: 18%; }
+    .transport-y-4 { bottom: 26%; }
+    .transport-y-5 { bottom: 34%; }
+    .transport-y-6 { bottom: 42%; }
+    .transport-y-7 { bottom: 50%; }
+    .transport-y-8 { bottom: 58%; }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+    .transport-bg {
+        font-size: 13px;
+    }
+    .transport-y-1 { bottom: 1%; }
+    .transport-y-2 { bottom: 9%; }
+    .transport-y-3 { bottom: 17%; }
+    .transport-y-4 { bottom: 25%; }
+    .transport-y-5 { bottom: 33%; }
+    .transport-y-6 { bottom: 41%; }
+    .transport-y-7 { bottom: 49%; }
+    .transport-y-8 { bottom: 57%; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .transport-right,
+    .transport-left {
+        animation: none !important;
+    }
+    .transport-bg {
+        opacity: 0.05 !important;
+    }
+}

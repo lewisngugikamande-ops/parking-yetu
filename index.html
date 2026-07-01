@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Yetu - Smart Parking</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://firestore.googleapis.com">
+    <link rel="preconnect" href="https://firebase.googleapis.com">
+</head>
+<body>
+
+    <!-- ==========================================
+    BACKGROUND - MOVING VEHICLES
+    ========================================== -->
+    <div class="transport-bg transport-right transport-slow transport-y-1 transport-medium-size">🚗 🚙</div>
+    <div class="transport-bg transport-left transport-slow transport-y-2 transport-medium-size">🚌 🚐</div>
+    <div class="transport-bg transport-right transport-medium transport-y-3 transport-large">🚓 🚑</div>
+    <div class="transport-bg transport-left transport-medium transport-y-4 transport-large">🚛 🚒</div>
+    <div class="transport-bg transport-right transport-fast transport-y-5 transport-medium-size">🏎️ 🏍️</div>
+    <div class="transport-bg transport-left transport-fast transport-y-6 transport-medium-size">🛴 🛵</div>
+    <div class="transport-bg transport-right transport-slow transport-y-7 transport-small">🚗 🚗</div>
+    <div class="transport-bg transport-left transport-slow transport-y-8 transport-small">🚙 🚙</div>
+
+    <!-- ==========================================
+    THEME TOGGLE
+    ========================================== -->
+    <button class="theme-toggle" id="themeToggle" onclick="window.toggleTheme()">🌙</button>
+
+    <!-- ==========================================
+    AUTH SCREEN
+    ========================================== -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-box">
+            <h2>🚗 Parking Yetu</h2>
+            <p class="sub" id="authSubtitle">Smart Parking Platform</p>
+
+            <div id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email Address">
+                <input type="password" id="loginPassword" placeholder="Password">
+                <div class="auth-error" id="loginError">Invalid credentials</div>
+                <button onclick="window.handleLogin()" class="btn-primary">🚀 Login</button>
+                <div class="auth-switch">
+                    Don't have an account? <span onclick="window.switchAuthMode('register')">Register</span>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display:none;">
+                <input type="text" id="registerName" placeholder="Full Name">
+                <input type="email" id="registerEmail" placeholder="Email Address">
+                <input type="password" id="registerPassword" placeholder="Password (min 6 chars)">
+                <select id="registerRole">
+                    <option value="admin">👨‍💼 Admin</option>
+                    <option value="security_manager">👔 Security Manager</option>
+                    <option value="guard">🛡️ Security Guard</option>
+                    <option value="receptionist">📋 Receptionist</option>
+                    <option value="driver">🚗 Driver</option>
+                </select>
+                <div class="auth-error" id="registerError">Registration failed</div>
+                <button onclick="window.handleRegister()" class="btn-primary">✨ Register</button>
+                <div class="auth-switch">
+                    Already have an account? <span onclick="window.switchAuthMode('login')">Login</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+    MAIN APP CONTAINER
+    ========================================== -->
+    <div id="appContainer" style="display:none;">
+        <div id="app"></div>
+    </div>
+
+    <!-- ==========================================
+    JAVASCRIPT - MODULAR
+    ========================================== -->
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>
+<script>
+// Direct functions - bypass module loading issues
+window.switchAuthMode = function(mode) {
+    console.log('🔄 switchAuthMode called:', mode);
+    var loginForm = document.getElementById('loginForm');
+    var registerForm = document.getElementById('registerForm');
+    var authSubtitle = document.getElementById('authSubtitle');
+    if (mode === 'login') {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+        authSubtitle.textContent = 'Welcome Back';
+        document.getElementById('loginError').classList.remove('show');
+    } else {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        authSubtitle.textContent = 'Create Account';
+        document.getElementById('registerError').classList.remove('show');
+    }
+};
+
+window.handleLogin = function() {
+    alert('🔐 Login clicked - Firebase auth coming soon!');
+};
+
+window.handleRegister = function() {
+    alert('📝 Register clicked - Firebase auth coming soon!');
+};
+
+window.toggleTheme = function() {
+    document.body.classList.toggle('light-theme');
+    var btn = document.getElementById('themeToggle');
+    if (btn) {
+        btn.textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌙';
+    }
+    localStorage.setItem('parking-theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+};
+
+console.log('✅ Direct functions installed on window');
+console.log('  switchAuthMode:', typeof window.switchAuthMode);
+console.log('  handleLogin:', typeof window.handleLogin);
+console.log('  handleRegister:', typeof window.handleRegister);
+console.log('  toggleTheme:', typeof window.toggleTheme);
+</script>
