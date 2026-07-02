@@ -8,3 +8,18 @@
 # These tell Netlify to pass ALL VITE_* variables to the build
 [context.production]
   environment = { }
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_FIREBASE_API_KEY = "AIzaSyDOSVkj2PbkZJDZLcTJ7FV4miP9_YeAlgU"
+  VITE_FIREBASE_AUTH_DOMAIN = "parking-yetu.firebaseapp.com"
+  VITE_FIREBASE_PROJECT_ID = "parking-yetu"
+  VITE_FIREBASE_STORAGE_BUCKET = "parking-yetu.firebasestorage.app"
+  VITE_FIREBASE_MESSAGING_SENDER_ID = "833714016787"
+  VITE_FIREBASE_APP_ID = "1:833714016787:web:2a20ec2ecda2ce452865e6"
+  VITE_FIREBASE_MEASUREMENT_ID = "G-HNNS3TYNBD"
+  VITE_APP_NAME = "Parking Yetu"
+  VITE_APP_VERSION = "3.1.0"
