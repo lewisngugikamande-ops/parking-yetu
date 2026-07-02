@@ -26,13 +26,16 @@ export async function bootstrap() {
     console.log('✅ Theme ready');
 
     // 3. Organization
-    console.log('🏢 Loading organization...');
+    // TEMPORARILY DISABLED - load after user authentication
+    /*   
+  console.log('🏢 Loading organization...');
     try {
         await OrganizationService.load('org_church_a');
         console.log('✅ Organization loaded');
     } catch (error) {
         console.error('❌ Failed to load organization:', error);
     }
+    */
 
     // 4. Auth (exposes window functions)
     console.log('🔐 Initializing auth...');
