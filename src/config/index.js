@@ -4,6 +4,14 @@
 
 import { OrganizationService } from '../core/organization-service.js';
 
+console.log("===== ENVIRONMENT =====");
+console.log(import.meta.env);
+
+console.log("API KEY:", import.meta.env.VITE_FIREBASE_API_KEY);
+console.log("PROJECT:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
+console.log("=======================");
+
+
 // These are now deprecated - use OrganizationService instead
 export const config = {
     firebase: {
