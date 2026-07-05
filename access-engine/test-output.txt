@@ -1,0 +1,374 @@
+
+> access-engine@1.0.0 test
+> jest
+
+  console.log
+    🔥 LOADED AccessEngine.js from: /home/lui/projects/parking-yetu/access-engine/packages/engine/src/AccessEngine.js
+
+      at Object.<anonymous> (packages/engine/src/AccessEngine.js:1:59)
+
+  console.log
+    >>> validateRequest
+
+      at AccessEngine.log [as validateRequest] (packages/engine/src/AccessEngine.js:68:13)
+
+  console.log
+    ✅ validateRequest done
+
+      at AccessEngine.log [as validateRequest] (packages/engine/src/AccessEngine.js:89:13)
+
+  console.log
+    >>> resolveCredential
+
+      at AccessEngine.log [as resolveCredential] (packages/engine/src/AccessEngine.js:93:13)
+
+  console.log
+    ✅ resolveCredential done, identityId: e8009404-76ba-40c2-bab4-0ce3f330c70e
+
+      at AccessEngine.log [as resolveCredential] (packages/engine/src/AccessEngine.js:101:13)
+
+  console.log
+    >>> resolveIdentity
+
+      at AccessEngine.log [as resolveIdentity] (packages/engine/src/AccessEngine.js:105:13)
+
+  console.log
+    ✅ resolveIdentity done, identity: Test User
+
+      at AccessEngine.log [as resolveIdentity] (packages/engine/src/AccessEngine.js:112:13)
+
+  console.log
+    >>> resolveMembership
+
+      at AccessEngine.log [as resolveMembership] (packages/engine/src/AccessEngine.js:116:13)
+
+  console.log
+    ✅ resolveMembership done, roles: [ 'member' ]
+
+      at AccessEngine.log [as resolveMembership] (packages/engine/src/AccessEngine.js:126:13)
+
+  console.log
+    >>> evaluatePolicy
+
+      at AccessEngine.log [as evaluatePolicy] (packages/engine/src/AccessEngine.js:130:13)
+
+  console.log
+    ✅ evaluatePolicy matched: Member Access
+
+      at AccessEngine.log [as evaluatePolicy] (packages/engine/src/AccessEngine.js:148:17)
+
+  console.log
+    >>> createSession
+
+      at AccessEngine.log [as createSession] (packages/engine/src/AccessEngine.js:157:13)
+
+  console.log
+    ✅ createSession done, sessionId: fd89b911-fe1b-47cc-96af-44f66293bee6
+
+      at AccessEngine.log [as createSession] (packages/engine/src/AccessEngine.js:173:13)
+
+  console.log
+    >>> emitEvents
+
+      at AccessEngine.log [as emitEvents] (packages/engine/src/AccessEngine.js:177:13)
+
+  console.log
+    ✅ emitEvents done, sessionId: fd89b911-fe1b-47cc-96af-44f66293bee6
+
+      at AccessEngine.log [as emitEvents] (packages/engine/src/AccessEngine.js:201:13)
+
+  console.error
+    🔴🔴🔴 ENGINE ERROR 🔴🔴🔴
+
+      50 |     } catch (error) {
+      51 |       // 🎯 DETAILED ERROR LOGGING
+    > 52 |       console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+         |               ^
+      53 |       console.error("Error message:", error.message);
+      54 |       console.error("Error stack:", error.stack);
+      55 |       console.error("Error name:", error.name);
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:52:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:65:20)
+
+  console.error
+    Error message: No handler registered for undefined
+
+      51 |       // 🎯 DETAILED ERROR LOGGING
+      52 |       console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+    > 53 |       console.error("Error message:", error.message);
+         |               ^
+      54 |       console.error("Error stack:", error.stack);
+      55 |       console.error("Error name:", error.name);
+      56 |       
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:53:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:65:20)
+
+  console.error
+    Error stack: Error: No handler registered for undefined
+        at RequestPipeline.process (/home/lui/projects/parking-yetu/access-engine/packages/kernel/src/pipeline/RequestPipeline.js:27:13)
+        at processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at AccessEngine.process (/home/lui/projects/parking-yetu/access-engine/packages/engine/src/AccessEngine.js:48:7)
+        at Object.<anonymous> (/home/lui/projects/parking-yetu/access-engine/packages/engine/tests/integration/engine.test.js:65:20)
+
+      52 |       console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+      53 |       console.error("Error message:", error.message);
+    > 54 |       console.error("Error stack:", error.stack);
+         |               ^
+      55 |       console.error("Error name:", error.name);
+      56 |       
+      57 |       return {
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:54:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:65:20)
+
+  console.error
+    Error name: Error
+
+      53 |       console.error("Error message:", error.message);
+      54 |       console.error("Error stack:", error.stack);
+    > 55 |       console.error("Error name:", error.name);
+         |               ^
+      56 |       
+      57 |       return {
+      58 |         success: false,
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:55:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:65:20)
+
+  console.log
+    >>> validateRequest
+
+      at AccessEngine.log [as validateRequest] (packages/engine/src/AccessEngine.js:68:13)
+
+  console.log
+    ✅ validateRequest done
+
+      at AccessEngine.log [as validateRequest] (packages/engine/src/AccessEngine.js:89:13)
+
+  console.log
+    >>> resolveCredential
+
+      at AccessEngine.log [as resolveCredential] (packages/engine/src/AccessEngine.js:93:13)
+
+  console.log
+    ✅ resolveCredential done, identityId: dbf1b849-fc33-4bff-b7d4-89394edd5377
+
+      at AccessEngine.log [as resolveCredential] (packages/engine/src/AccessEngine.js:101:13)
+
+  console.log
+    >>> resolveIdentity
+
+      at AccessEngine.log [as resolveIdentity] (packages/engine/src/AccessEngine.js:105:13)
+
+  console.log
+    ✅ resolveIdentity done, identity: Guest User
+
+      at AccessEngine.log [as resolveIdentity] (packages/engine/src/AccessEngine.js:112:13)
+
+  console.log
+    >>> resolveMembership
+
+      at AccessEngine.log [as resolveMembership] (packages/engine/src/AccessEngine.js:116:13)
+
+  console.error
+    🔴🔴🔴 ENGINE ERROR 🔴🔴🔴
+
+      50 |     } catch (error) {
+      51 |       // 🎯 DETAILED ERROR LOGGING
+    > 52 |       console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+         |               ^
+      53 |       console.error("Error message:", error.message);
+      54 |       console.error("Error stack:", error.stack);
+      55 |       console.error("Error name:", error.name);
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:52:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:91:20)
+
+  console.error
+    Error message: No membership found for this organization
+
+      51 |       // 🎯 DETAILED ERROR LOGGING
+      52 |       console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+    > 53 |       console.error("Error message:", error.message);
+         |               ^
+      54 |       console.error("Error stack:", error.stack);
+      55 |       console.error("Error name:", error.name);
+      56 |       
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:53:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:91:20)
+
+  console.error
+    Error stack: Error: No membership found for this organization
+        at AccessEngine.resolveMembership (/home/lui/projects/parking-yetu/access-engine/packages/engine/src/AccessEngine.js:122:28)
+        at processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at RequestPipeline.process (/home/lui/projects/parking-yetu/access-engine/packages/kernel/src/pipeline/RequestPipeline.js:19:7)
+        at AccessEngine.process (/home/lui/projects/parking-yetu/access-engine/packages/engine/src/AccessEngine.js:48:7)
+        at Object.<anonymous> (/home/lui/projects/parking-yetu/access-engine/packages/engine/tests/integration/engine.test.js:91:20)
+
+      52 |       console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+      53 |       console.error("Error message:", error.message);
+    > 54 |       console.error("Error stack:", error.stack);
+         |               ^
+      55 |       console.error("Error name:", error.name);
+      56 |       
+      57 |       return {
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:54:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:91:20)
+
+  console.error
+    Error name: Error
+
+      53 |       console.error("Error message:", error.message);
+      54 |       console.error("Error stack:", error.stack);
+    > 55 |       console.error("Error name:", error.name);
+         |               ^
+      56 |       
+      57 |       return {
+      58 |         success: false,
+
+      at AccessEngine.error [as process] (packages/engine/src/AccessEngine.js:55:15)
+      at Object.<anonymous> (packages/engine/tests/integration/engine.test.js:91:20)
+
+FAIL packages/engine/tests/integration/engine.test.js
+  AccessEngine Integration
+    ✕ allows a member to enter via QR scan (69 ms)
+    ✓ denies access to non-member (22 ms)
+
+  ● AccessEngine Integration › allows a member to enter via QR scan
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      70 |     });
+      71 |     
+    > 72 |     expect(result.success).toBe(true);
+         |                            ^
+      73 |     expect(result.decision).toBe('allow');
+      74 |     expect(result.sessionId).toBeDefined();
+      75 |   });
+
+      at Object.toBe (packages/engine/tests/integration/engine.test.js:72:28)
+
+PASS packages/domain/src/identity/identity.test.js
+  Identity
+    Creation
+      ✓ creates an active identity with valid profile (1 ms)
+      ✓ emits IdentityCreatedEvent on creation (2 ms)
+      ✓ rejects invalid email (31 ms)
+      ✓ rejects invalid phone (2 ms)
+    Activation
+      ✓ activates a suspended identity (3 ms)
+      ✓ fails to activate an already active identity (1 ms)
+      ✓ fails to activate a deactivated identity (1 ms)
+      ✓ emits IdentityActivatedEvent on activation (2 ms)
+    Suspension
+      ✓ suspends an active identity (2 ms)
+      ✓ fails to suspend an already suspended identity
+      ✓ fails to suspend a deactivated identity
+      ✓ emits IdentitySuspendedEvent on suspension (1 ms)
+    Deactivation
+      ✓ deactivates an active identity (1 ms)
+      ✓ deactivates a suspended identity (8 ms)
+      ✓ fails to deactivate an already deactivated identity
+      ✓ emits IdentityDeactivatedEvent on deactivation
+    Versioning
+      ✓ increments version on each state change
+    Restoration
+      ✓ restores from repository data without emitting events (1 ms)
+    Serialization
+      ✓ serializes to JSON (2 ms)
+
+PASS packages/kernel/tests/kernel.test.js
+  @access-engine/kernel
+    Container
+      ✓ should register and resolve services (6 ms)
+      ✓ should support singletons (2 ms)
+      ✓ should support factories (1 ms)
+      ✓ should throw when service not found (11 ms)
+    EventBus
+      ✓ should publish and subscribe (12 ms)
+      ✓ should support once subscriptions (1 ms)
+      ✓ should store history (1 ms)
+    Result
+      ✓ should create Ok (1 ms)
+      ✓ should create Err (4 ms)
+      ✓ should map Ok (1 ms)
+      ✓ should support unwrapOr
+    RequestPipeline
+      ✓ should process requests through middleware
+      ✓ should halt on middleware result
+
+PASS packages/foundation/tests/entity.test.js
+  Entity
+    ✓ entities have identity (2 ms)
+    ✓ entities can be compared (1 ms)
+    ✓ different entities are not equal (1 ms)
+    ✓ entities track domain events
+    ✓ entities increment version on change
+    ✓ entities can clear events
+
+PASS packages/foundation/tests/value-object.test.js
+  ValueObject
+    ✓ value objects are immutable (1 ms)
+    ✓ value objects compare by value (2 ms)
+    ✓ value objects serialize to JSON (1 ms)
+
+PASS packages/core/organization/tests/organization.test.js
+  @access-engine/organization
+    ✓ should work (1 ms)
+
+PASS packages/core/access-point/tests/access-point.test.js
+  @access-engine/access-point
+    ✓ should work
+
+PASS packages/core/membership/tests/membership.test.js
+  @access-engine/membership
+    ✓ should work
+
+PASS packages/core/credential/tests/credential.test.js
+  @access-engine/credential
+    ✓ should work (1 ms)
+
+PASS packages/core/resource/tests/resource.test.js
+  @access-engine/resource
+    ✓ should work
+
+PASS packages/core/identity/tests/identity.test.js
+  @access-engine/identity
+    ✓ should work
+
+PASS packages/core/session/tests/session.test.js
+  @access-engine/session
+    ✓ should work
+
+PASS packages/core/request/tests/request.test.js
+  @access-engine/request
+    ✓ should work
+
+PASS packages/core/policy/tests/policy.test.js
+  @access-engine/policy
+    ✓ should work (1 ms)
+
+PASS packages/core/event/tests/event.test.js
+  @access-engine/event
+    ✓ should work
+
+PASS packages/core/audit/tests/audit.test.js
+  @access-engine/audit
+    ✓ should work
+
+PASS packages/core/role/tests/role.test.js
+  @access-engine/role
+    ✓ should work (1 ms)
+
+Test Suites: 1 failed, 16 passed, 17 total
+Tests:       1 failed, 54 passed, 55 total
+Snapshots:   0 total
+Time:        2.387 s
+Ran all test suites.

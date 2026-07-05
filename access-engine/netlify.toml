@@ -1,0 +1,16 @@
+[build]
+  command = "echo '✅ Building for Netlify' && mkdir -p dist && cp -r packages/applications/parking/dist/* dist/ 2>/dev/null || echo '⚠️  No UI found'"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer-when-downgrade"

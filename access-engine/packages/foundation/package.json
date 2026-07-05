@@ -1,0 +1,8 @@
+{
+  "name": "@access-engine/foundation",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "dependencies": {
+    "uuid": "^9.0.1"
+  }
+}
