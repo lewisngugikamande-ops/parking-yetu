@@ -113,11 +113,7 @@ class MemoryPolicyRepository extends PolicyRepository {
   }
 
   async findById(id) {
-  const result = this.data.get(id.toString()) || null;
-  console.log('🔍 MemoryIdentityRepository.findById returning:', result);
-  console.log('🔍 Is it an Identity instance?', result instanceof Identity);
-  console.log('🔍 Does it have isActive?', result && typeof result.isActive === 'function' ? 'yes' : 'no');
-  return result;
+    return this.data.get(id.toString()) || null;
 }
 
   async findByOrganization(organizationId) {
