@@ -1,0 +1,49 @@
+headersOrigin = "config"
+redirectsOrigin = "config"
+plugins = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "/home/lui/projects/parking-yetu/access-engine/dist"
+publishOrigin = "config"
+commandOrigin = "config"
+base = "/home/lui/projects/parking-yetu/access-engine"
+command = "echo '✅ Building for Netlify' && mkdir -p dist && cp -r packages/applications/parking/dist/* dist/ 2>/dev/null || echo '⚠️  No UI found'"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[headers]]
+for = "/*"
+
+[headers.values]
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "no-referrer-when-downgrade"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

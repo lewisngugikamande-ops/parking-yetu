@@ -1,0 +1,247 @@
+console.log("🔥 LOADED AccessEngine.js from:", __filename);
+
+const { RequestPipeline } = require('@access-engine/kernel');
+const { Result } = require('@access-engine/foundation');
+
+class AccessEngine {
+  constructor({
+    identityRepository,
+    credentialRepository,
+    membershipRepository,
+    policyRepository,
+    sessionRepository,
+    eventBus
+  }) {
+    this.identityRepository = identityRepository;
+    this.credentialRepository = credentialRepository;
+    this.membershipRepository = membershipRepository;
+    this.policyRepository = policyRepository;
+    this.sessionRepository = sessionRepository;
+    this.eventBus = eventBus;
+    
+    this.pipeline = new RequestPipeline();
+    this.setupPipeline();
+  }
+  
+  static builder() {
+    return new AccessEngineBuilder();
+  }
+  
+  setupPipeline() {
+    this.pipeline.use(this.validateRequest.bind(this));
+    this.pipeline.use(this.resolveCredential.bind(this));
+    this.pipeline.use(this.resolveIdentity.bind(this));
+    this.pipeline.use(this.resolveMembership.bind(this));
+    this.pipeline.use(this.evaluatePolicy.bind(this));
+    this.pipeline.use(this.createSession.bind(this));
+    this.pipeline.use(this.emitEvents.bind(this));
+  }
+  
+  async process(request) {
+    const context = { 
+      request, 
+      metadata: {}, 
+      result: null 
+    };
+    
+    try {
+      await this.pipeline.process(context);
+      return context.result || { success: true };
+    } catch (error) {
+      // 🎯 DETAILED ERROR LOGGING
+      console.error("🔴🔴🔴 ENGINE ERROR 🔴🔴🔴");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("Error name:", error.name);
+      
+      return {
+        success: false,
+        error: error.message,
+        decision: 'deny'
+      };
+    }
+  }
+  
+  // ===== PIPELINE STAGES =====
+  
+  async validateRequest(ctx) {
+    console.log(">>> validateRequest");
+    const requestData = ctx.request.request || ctx.request;
+    const { credential, accessPointId, action, organizationId } = requestData;
+    
+    let credentialValue = null;
+    if (typeof credential === 'string') {
+      credentialValue = credential;
+    } else if (credential && typeof credential === 'object') {
+      credentialValue = credential.value;
+  x  }
+    
+    if (!credentialValue) throw new Error('Credential is required');
+    if (!accessPointId) throw new Error('Access point is required');
+    if (!action) throw new Error('Action is required');
+    if (!['enter', 'exit'].includes(action)) {
+      throw new Error(`Invalid action: ${action}`);
+    }
+    
+    ctx.credentialValue = credentialValue;
+    ctx.organizationId = organizationId || 'default-org';
+    ctx.requestData = requestData;
+    console.log("✅ validateRequest done");
+  }
+  
+  async resolveCredential(ctx) {
+    console.log(">>> resolveCredential");
+    const credential = await this.credentialRepository.findByValue(ctx.credentialValue);
+    
+    if (!credential) throw new Error('Credential not found');
+    if (!credential.isValid()) throw new Error('Credential is expired or revoked');
+    
+    ctx.credential = credential;
+    ctx.identityId = credential.identityId;
+    console.log("✅ resolveCredential done, identityId:", ctx.identityId);
+  }
+  
+  async resolveIdentity(ctx) {
+    console.log(">>> resolveIdentity");
+    const identity = await this.identityRepository.findById(ctx.identityId);
+    
+    if (!identity) throw new Error('Identity not found');
+    if (!identity.isActive()) throw new Error('Identity is not active');
+    
+    ctx.identity = identity;
+    console.log("✅ resolveIdentity done, identity:", identity.name);
+  }
+  
+  async resolveMembership(ctx) {
+    console.log(">>> resolveMembership");
+    const membership = await this.membershipRepository.findByIdentityAndOrganization(
+      ctx.identity.id,
+      ctx.organizationId
+    );
+    
+    if (!membership) throw new Error('No membership found for this organization');
+    if (!membership.isActive()) throw new Error('Membership is not active');
+    
+    ctx.membership = membership;
+    console.log("✅ resolveMembership done, roles:", membership.roles);
+  }
+  
+  async evaluatePolicy(ctx) {
+    console.log(">>> evaluatePolicy");
+    const policies = await this.policyRepository.findByOrganization(ctx.organizationId);
+    
+    for (const policy of policies) {
+      const context = {
+        identity: ctx.identity,
+        membership: ctx.membership,
+        action: ctx.requestData?.action || ctx.request.action
+      };
+      
+      const result = policy.evaluate(context);
+      
+      if (result.matched) {
+        if (result.effect === 'deny') {
+          throw new Error(result.reason || 'Policy denied access');
+        }
+        ctx.policy = policy;
+        ctx.policyResult = result;
+        console.log("✅ evaluatePolicy matched:", policy.name);
+        return;
+      }
+    }
+    
+    throw new Error('No matching policy found');
+  }
+  
+  async createSession(ctx) {
+    console.log(">>> createSession");
+    const Session = require('./session/Session');
+    
+    const session = Session.create({
+      identityId: ctx.identity.id,
+      resourceId: ctx.requestData?.accessPointId || ctx.request.accessPointId,
+      status: 'active',
+      context: {
+        policyId: ctx.policy?.id,
+        action: ctx.requestData?.action || ctx.request.action,
+        organizationId: ctx.organizationId
+      }
+    });
+    
+    await this.sessionRepository.save(session);
+    ctx.session = session;
+    console.log("✅ createSession done, sessionId:", session.id);
+  }
+  
+  async emitEvents(ctx) {
+    console.log(">>> emitEvents");
+    const events = [];
+    
+    if (ctx.identity && ctx.identity.getEvents) {
+      events.push(...ctx.identity.getEvents());
+      ctx.identity.clearEvents();
+    }
+    
+    if (ctx.session && ctx.session.getEvents) {
+      events.push(...ctx.session.getEvents());
+      ctx.session.clearEvents();
+    }
+    
+    for (const event of events) {
+      await this.eventBus.publish(event.type, event.data);
+    }
+    
+    ctx.result = {
+      success: true,
+      decision: 'allow',
+      sessionId: ctx.session?.id,
+      identityId: ctx.identity?.id,
+      events: events.map(e => e.toJSON ? e.toJSON() : e)
+    };
+    console.log("✅ emitEvents done, sessionId:", ctx.session?.id);
+  }
+}
+
+// ===== BUILDER =====
+
+class AccessEngineBuilder {
+  constructor() {
+    this.config = {};
+  }
+  
+  withIdentityRepository(repo) {
+    this.config.identityRepository = repo;
+    return this;
+  }
+  
+  withCredentialRepository(repo) {
+    this.config.credentialRepository = repo;
+    return this;
+  }
+  
+  withMembershipRepository(repo) {
+    this.config.membershipRepository = repo;
+    return this;
+  }
+  
+  withPolicyRepository(repo) {
+    this.config.policyRepository = repo;
+    return this;
+  }
+  
+  withSessionRepository(repo) {
+    this.config.sessionRepository = repo;
+    return this;
+  }
+  
+  withEventBus(eventBus) {
+    this.config.eventBus = eventBus;
+    return this;
+  }
+  
+  build() {
+    return new AccessEngine(this.config);
+  }
+}
+
+module.exports = AccessEngine;

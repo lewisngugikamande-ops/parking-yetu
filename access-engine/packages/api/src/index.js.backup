@@ -89,13 +89,7 @@ health.register('auth', async () => {
   }
 });
 
-// CORS configuration - allow all origins for development
-app.use(cors({
-  origin: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -137,51 +131,6 @@ app.get('/metrics', (req, res) => {
 });
 
 // Login endpoint
-// GET /auth/me - Get current user
-app.get('/auth/me', requireAuth, async (req, res) => {
-  try {
-    const principal = req.principal;
-    if (!principal) {
-      return res.status(401).json({
-        success: false,
-        error: 'Not authenticated'
-      });
-    }
-    
-    // Get the full identity from the repository
-    const identity = await repositories.identity.findById(principal.subject);
-    
-    res.json({
-      success: true,
-      principal: principal.toJSON ? principal.toJSON() : principal,
-      user: identity ? identity.toJSON() : null
-    });
-  } catch (error) {
-    console.error('Error in /auth/me:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// POST /auth/logout - Logout user
-app.post('/auth/logout', requireAuth, async (req, res) => {
-  try {
-    // In mock auth, we just return success
-    // With real auth, you'd invalidate the token
-    res.json({
-      success: true,
-      message: 'Logout successful'
-    });
-  } catch (error) {
-    console.error('Error in /auth/logout:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
 app.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -195,52 +144,7 @@ app.post('/auth/login', async (req, res) => {
         decision: 'deny'
       });
     }
-
-// Add this after the login endpoint
-app.get('/auth/me', requireAuth, async (req, res) => {
-  try {
-    // Return the current user info from the principal
-    const principal = req.principal;
-    if (!principal) {
-      return res.status(401).json({
-        success: false,
-        error: 'Not authenticated'
-      });
-    }
     
-    // Get the user details from the identity repository
-    const identity = await repositories.identity.findById(principal.subject);
-    
-    res.json({
-      success: true,
-      principal: principal.toJSON ? principal.toJSON() : principal,
-      user: identity ? identity.toJSON() : null
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Add this after the /auth/me endpoint
-app.post('/auth/logout', requireAuth, async (req, res) => {
-  try {
-    // In mock auth, just return success
-    // With real auth, you'd invalidate the token
-    res.json({
-      success: true,
-      message: 'Logout successful'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
- 
     res.json({
       success: true,
       token: result.token,

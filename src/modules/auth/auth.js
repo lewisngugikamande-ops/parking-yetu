@@ -1,22 +1,19 @@
 // ============================================
-// Authentication Module - Only Load After Login
+// Authentication Module - Uses Access Engine
 // ============================================
 
-import { getAuth, getDb } from '../../services/firebase.js';
-import { translateError } from '../../core/errors.js';
 import { 
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    updateProfile,
-    signOut,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    login as platformLogin,
+    register as platformRegister,
+    logout as platformLogout,
+    onAuthStateChange,
+    getCurrentUser
+} from '../../platform/auth.js';
+import { translateError } from '../../core/errors.js';
 
-var auth = getAuth();
-var db = getDb();
 var loginInProgress = false;
 var isInitialLoad = true;
+var authChecked = false;
 
 export function initAuth() {
     window.handleLogin = handleLogin;
@@ -24,60 +21,76 @@ export function initAuth() {
     window.switchAuthMode = switchAuthMode;
     window.handleLogout = handleLogout;
 
-    onAuthStateChanged(auth, function(user) {
+    // Listen for auth state changes
+    onAuthStateChange(function(user) {
+        console.log('🔐 Auth state changed:', user ? 'Authenticated' : 'Logged out');
+        
         if (user) {
-            console.log('✅ User authenticated:', user.email);
-            
-            // Only load workstation if this is a new login, not on initial load
-            if (!isInitialLoad || loginInProgress) {
-                showAppAndLoadWorkstation();
-            } else {
-                console.log('ℹ️ Stale session detected - showing login screen');
-                showLogin();
-            }
-            isInitialLoad = false;
-            loginInProgress = false;
+            console.log('✅ User authenticated:', user.subject || user.username || 'User');
+            authChecked = true;
+            showAppAndLoadWorkstation();
         } else {
             console.log('🔐 User logged out');
+            authChecked = true;
             showLogin();
         }
     });
+
+    // Check if we already have a user (from localStorage)
+    const existingUser = getCurrentUser();
+    if (existingUser) {
+        console.log('👤 Found existing user, waiting for auth check...');
+        // The onAuthStateChange will handle showing the app
+    } else {
+        console.log('🔐 No existing user, showing login');
+        showLogin();
+    }
 
     console.log('✅ Auth initialized');
 }
 
 function showAppAndLoadWorkstation() {
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('appContainer').style.display = 'block';
+    const authScreen = document.getElementById('authScreen');
+    const appContainer = document.getElementById('appContainer');
     
-    try {
-        import('../../modules/workstation/index.js').then(function(module) {
-            var init = module.default;
-            init();
-            console.log('✅ Workstation loaded');
-        }).catch(function(error) {
+    if (authScreen) authScreen.style.display = 'none';
+    if (appContainer) appContainer.style.display = 'block';
+    
+    // Only load workstation if it hasn't been loaded yet
+    if (!window.__workstationLoaded) {
+        try {
+            import('../../modules/workstation/index.js').then(function(module) {
+                var init = module.default;
+                init();
+                window.__workstationLoaded = true;
+                console.log('✅ Workstation loaded');
+            }).catch(function(error) {
+                console.error('❌ Workstation error:', error);
+            });
+        } catch (error) {
             console.error('❌ Workstation error:', error);
-        });
-    } catch (error) {
-        console.error('❌ Workstation error:', error);
+        }
     }
 }
 
 function showLogin() {
-    document.getElementById('authScreen').style.display = 'flex';
-    document.getElementById('appContainer').style.display = 'none';
+    const authScreen = document.getElementById('authScreen');
+    const appContainer = document.getElementById('appContainer');
+    
+    if (authScreen) authScreen.style.display = 'flex';
+    if (appContainer) appContainer.style.display = 'none';
 }
 
 async function handleLogin() {
     console.log('🔐 Login clicked');
-    var email = document.getElementById('loginEmail').value.trim();
+    var username = document.getElementById('loginEmail').value.trim();
     var password = document.getElementById('loginPassword').value.trim();
     var errorDiv = document.getElementById('loginError');
     if (errorDiv) errorDiv.classList.remove('show');
 
-    if (!email || !password) {
+    if (!username) {
         if (errorDiv) {
-            errorDiv.textContent = 'Please fill in all fields';
+            errorDiv.textContent = 'Please enter your username';
             errorDiv.classList.add('show');
         }
         return;
@@ -86,8 +99,9 @@ async function handleLogin() {
     try {
         loginInProgress = true;
         isInitialLoad = false;
-        await signInWithEmailAndPassword(auth, email, password);
+        await platformLogin(username, password || 'mock');
         console.log('✅ Login successful');
+        // The onAuthStateChange will handle showing the app
     } catch (error) {
         loginInProgress = false;
         console.error('❌ Login error:', error);
@@ -125,21 +139,7 @@ async function handleRegister() {
     }
 
     try {
-        var userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        var user = userCredential.user;
-        await updateProfile(user, { displayName: name });
-        
-        await setDoc(doc(db, 'users', user.uid), {
-            uid: user.uid,
-            name: name,
-            email: email,
-            role: role,
-            organizationId: 'org_church_a',
-            locationId: 'church_a',
-            isActive: true,
-            createdAt: serverTimestamp()
-        });
-        
+        await platformRegister(name, email, password, role);
         console.log('✅ Registration successful');
         alert('Registration successful! Please login.');
         switchAuthMode('login');
@@ -178,8 +178,8 @@ function switchAuthMode(mode) {
 
 async function handleLogout() {
     try {
-        await signOut(auth);
-        // Clear the flag so login screen shows
+        await platformLogout();
+        window.__workstationLoaded = false;
         isInitialLoad = true;
         window.location.reload();
     } catch (error) {

@@ -3,9 +3,18 @@
 // ============================================
 
 import { createModal, closeModal, isEntryModalOpen, setEntryModalOpen } from './modals.js';
+import { Vehicle } from '../../models/Vehicle.js';
+import { Session } from '../../models/Session.js';
+import { getVehicleRepository } from '../../repositories/vehicle-repository.js';
+import { getSessionRepository } from '../../repositories/session-repository.js';
+import { Audit } from '../../core/audit.js';
+import { emit } from '../../core/events.js';
+import { config } from '../../config/index.js';
 import { showToast } from './toast.js';
 import { refreshData, incrementTodayCount } from './stats.js';
-import { processEntry } from '../../services/api-client.js';
+
+const vehicleRepo = getVehicleRepository();
+const sessionRepo = getSessionRepository();
 
 // ==========================================
 // Validation
@@ -13,32 +22,21 @@ import { processEntry } from '../../services/api-client.js';
 
 function validatePlate(plate) {
     if (!plate || plate.length < 3) {
-        return { valid: false, error: 'License plate or QR code is required' };
+        return { valid: false, error: 'License plate is required' };
     }
-    
-    const cleaned = plate.toUpperCase().trim();
-    
-    // Check if it's a QR code (contains hyphens, is alphanumeric with hyphens)
-    // This handles: TEST-QR-123, QR-123, ABC-DEF-123, etc.
-    const isQRCode = /^[A-Z0-9]+(-[A-Z0-9]+)+$/.test(cleaned);
-    
-    if (isQRCode) {
-        return { valid: true, value: cleaned, type: 'qr' };
-    }
-    
     // Kenyan plate: 3 letters + 3 numbers + optional letter
     const kenyanPlate = /^[A-Z]{3}\d{3}[A-Z]?$/;
-    if (kenyanPlate.test(cleaned.replace(/\s/g, ''))) {
-        return { valid: true, value: cleaned, type: 'plate' };
+    if (!kenyanPlate.test(plate.toUpperCase().replace(/\s/g, ''))) {
+        return { valid: false, error: 'Invalid plate format. Use: KDG832A' };
     }
-    
-    return { valid: false, error: 'Invalid format. Use: KDG832A or a valid QR code' };
+    return { valid: true, value: plate.toUpperCase() };
 }
 
 function validatePhone(phone) {
     if (!phone) {
         return { valid: false, error: 'Phone number is required' };
     }
+    // Kenya phone: 0712345678, 0112345678, 254712345678, +254712345678
     const cleaned = phone.replace(/\s/g, '');
     const kenyaPhone = /^(?:\+254|254|0)(7\d{8}|1\d{8})$/;
     if (!kenyaPhone.test(cleaned)) {
@@ -72,8 +70,7 @@ function validateEntryForm(data) {
         data: {
             plate: plateResult.valid ? plateResult.value : data.plate,
             driver: nameResult.valid ? nameResult.value : data.driver,
-            phone: phoneResult.valid ? phoneResult.value : data.phone,
-            type: plateResult.type || 'plate'
+            phone: phoneResult.valid ? phoneResult.value : data.phone
         }
     };
 }
@@ -89,11 +86,9 @@ export function openEntryModal() {
     const content = `
         <form id="entryForm">
             <div style="margin-bottom:12px;">
-                <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">
-                    License Plate or QR Code *
-                </label>
-                <input type="text" id="entryPlate" placeholder="e.g. KDG832A or TEST-QR-123" style="text-transform:uppercase;width:100%;padding:12px 16px;border-radius:16px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);font-size:16px;">
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Format: KDG832A (plate) or TEST-QR-123 (QR code)</div>
+                <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">License Plate *</label>
+                <input type="text" id="entryPlate" placeholder="e.g. KDG832A" style="text-transform:uppercase;width:100%;padding:12px 16px;border-radius:16px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);font-size:16px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Format: 3 letters + 3 numbers + optional letter (e.g. KDG832A)</div>
             </div>
             <div style="margin-bottom:12px;">
                 <label style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Driver Name *</label>
@@ -147,6 +142,7 @@ async function handleEntrySubmit() {
     const isStaff = document.getElementById('entryStaff')?.checked || false;
     const errorDiv = document.getElementById('entryError');
 
+    // Validate
     const validation = validateEntryForm({ plate, driver, phone });
     if (!validation.valid) {
         errorDiv.textContent = `❌ ${validation.errors.join('\n')}`;
@@ -156,41 +152,45 @@ async function handleEntrySubmit() {
 
     errorDiv.style.display = 'none';
     const { plate: validPlate, driver: validDriver, phone: validPhone } = validation.data;
-    const credentialValue = validPlate;
 
     try {
         const submitBtn = document.querySelector('#entryForm .btn-primary');
         submitBtn.textContent = '⏳ Saving...';
         submitBtn.disabled = true;
 
-        const result = await processEntry(
-            credentialValue,
-            'gate-a',
-            'test-org',
-            {
-                vehicle: {
-                    licensePlate: validPlate,
-                    type: vehicleType
-                },
-                driver: {
-                    name: validDriver,
-                    phone: validPhone
-                },
-                isVIP: isVIP,
-                isStaff: isStaff,
-                locationId: 'church_a',
-                credentialType: validation.data.type || 'plate'
-            }
-        );
-
-        if (result.success) {
-            incrementTodayCount();
-            closeModal('entryModal');
-            showToast(`✅ ${validPlate} checked in successfully!`, 'success');
-            await refreshData();
-        } else {
-            throw new Error(result.error || 'Entry failed');
+        // Find or create vehicle
+        let vehicle = await vehicleRepo.findByPlate(validPlate);
+        if (!vehicle) {
+            vehicle = new Vehicle({
+                licensePlate: validPlate,
+                type: vehicleType,
+                organizationId: config.app.defaultOrganization
+            });
+            vehicle = await vehicleRepo.create(vehicle);
         }
+
+        // Create session
+        const session = new Session({
+            vehicleId: vehicle.id,
+            vehiclePlate: validPlate,
+            driverName: validDriver,
+            driverPhone: validPhone,
+            gate: config.app.defaultGate,
+            locationId: config.app.defaultLocation,
+            organizationId: config.app.defaultOrganization
+        });
+        if (isVIP) session.setVIP();
+        if (isStaff) session.setStaff();
+
+        const saved = await sessionRepo.create(session);
+        await Audit.vehicleEntry(saved);
+        await emit('vehicle:entered', { session: saved });
+
+        incrementTodayCount();
+
+        closeModal('entryModal');
+        showToast(`✅ ${validPlate} checked in successfully!`, 'success');
+        await refreshData();
 
     } catch (error) {
         errorDiv.textContent = `❌ ${error.message}`;
