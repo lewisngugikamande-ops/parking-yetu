@@ -1,0 +1,210 @@
+// ==========================================
+// ACCESS JOURNEY - Complete Access Workflow
+// ==========================================
+
+import Workflow from '../core/workflow/Workflow.js';
+
+export class AccessJourney extends Workflow {
+    constructor(options = {}) {
+        super({
+            id: 'access-journey',
+            name: 'Access Journey',
+            version: '1.0.0',
+            initialState: 'idle',
+            states: {
+                IDLE: 'idle',
+                GATE_IDENTIFIED: 'gate_identified',
+                IDENTITY_CHECK: 'identity_check',
+                IDENTITY_RESOLVED: 'identity_resolved',
+                REGISTRATION: 'registration',
+                POLICY_CHECK: 'policy_check',
+                ACCESS_GRANTED: 'access_granted',
+                SESSION_ACTIVE: 'session_active',
+                EXIT_PENDING: 'exit_pending',
+                COMPLETE: 'complete'
+            }
+        });
+
+        // Services (injected)
+        this.credentialService = options.credentialService;
+        this.sessionService = options.sessionService;
+        this.policyService = options.policyService;
+        this.organizationService = options.organizationService;
+    }
+
+    _getTransition(state, action) {
+        const transitions = {
+            'idle': {
+                'scan': { target: this.states.GATE_IDENTIFIED }
+            },
+            'gate_identified': {
+                'identify': { target: this.states.IDENTITY_CHECK },
+                'register': { target: this.states.REGISTRATION }
+            },
+            'identity_check': {
+                'found': { target: this.states.IDENTITY_RESOLVED },
+                'not_found': { target: this.states.REGISTRATION }
+            },
+            'identity_resolved': {
+                'evaluate_policy': { target: this.states.POLICY_CHECK }
+            },
+            'registration': {
+                'complete': { target: this.states.IDENTITY_RESOLVED },
+                'cancel': { target: this.states.GATE_IDENTIFIED }
+            },
+            'policy_check': {
+                'granted': { 
+                    target: this.states.ACCESS_GRANTED,
+                    handler: async (context) => {
+                        await this._createSession(context);
+                    }
+                },
+                'denied': { 
+                    target: this.states.COMPLETE,
+                    handler: async (context) => {
+                        context.reason = 'Access denied by policy';
+                    }
+                }
+            },
+            'access_granted': {
+                'activate': { target: this.states.SESSION_ACTIVE }
+            },
+            'session_active': {
+                'exit': { target: this.states.EXIT_PENDING }
+            },
+            'exit_pending': {
+                'confirm': { 
+                    target: this.states.COMPLETE,
+                    handler: async (context) => {
+                        await this._closeSession(context);
+                    }
+                }
+            }
+        };
+
+        return transitions[state]?.[action] || null;
+    }
+
+    // ==========================================
+    // ACTIONS (called by UI)
+    // ==========================================
+
+    async scanGate(qrData) {
+        const data = typeof qrData === 'string' ? JSON.parse(qrData) : qrData;
+        this.context.gate = {
+            organizationId: data.organizationId,
+            locationId: data.locationId,
+            accessPointId: data.accessPointId,
+            name: data.name,
+            capacity: data.capacity
+        };
+        await this.next('scan', { gate: this.context.gate });
+        return this;
+    }
+
+    async identify(plate) {
+        this.context.vehiclePlate = plate;
+        await this.next('identify', { vehiclePlate: plate });
+        
+        const credential = await this.credentialService?.findByPlate(plate);
+        if (credential) {
+            this.context.credential = credential;
+            await this.next('found', { credential });
+            await this.evaluatePolicy();
+        } else {
+            await this.next('not_found');
+        }
+        return this;
+    }
+
+    async register(data) {
+        const credential = await this.credentialService?.create(data);
+        this.context.credential = credential;
+        await this.next('complete', { credential });
+        await this.evaluatePolicy();
+        return this;
+    }
+
+    async evaluatePolicy() {
+        await this.next('evaluate_policy');
+        
+        const decision = await this.policyService?.evaluate({
+            credential: this.context.credential,
+            gate: this.context.gate
+        });
+        
+        if (decision?.granted) {
+            this.context.policy = decision;
+            await this.next('granted');
+            await this.activateSession();
+        } else {
+            this.context.policy = decision;
+            await this.next('denied');
+        }
+        return this;
+    }
+
+    async activateSession() {
+        const session = await this.sessionService?.create({
+            credentialId: this.context.credential?.id,
+            gateId: this.context.gate?.accessPointId,
+            organizationId: this.context.gate?.organizationId
+        });
+        this.context.session = session;
+        await this.next('activate', { session });
+        return this;
+    }
+
+    async requestExit() {
+        await this.next('exit');
+        return this;
+    }
+
+    async confirmExit() {
+        await this.sessionService?.close(this.context.session?.id);
+        await this.next('confirm');
+        return this;
+    }
+
+    // ==========================================
+    // PRIVATE HELPERS
+    // ==========================================
+
+    async _createSession(context) {
+        const session = await this.sessionService?.create({
+            credentialId: context.credential?.id,
+            gateId: context.gate?.accessPointId,
+            organizationId: context.gate?.organizationId
+        });
+        context.session = session;
+        return session;
+    }
+
+    async _closeSession(context) {
+        await this.sessionService?.close(context.session?.id);
+        return true;
+    }
+}
+
+export default AccessJourney;
+
+    /**
+     * Begin registration flow
+     */
+    async beginRegistration() {
+        await this.next('register');
+        return this;
+    }
+
+    /**
+     * Cancel registration and go back
+     */
+    async cancelRegistration() {
+        await this.next('cancel');
+        return this;
+    }
+
+    /**
+     * Request exit from active session
+     */
+    }

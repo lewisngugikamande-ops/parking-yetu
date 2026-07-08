@@ -1,7 +1,3 @@
-cd ~/projects/parking-yetu
-
-# This is the complete CSS from your original app
-cat > css/main.css << 'EOF'
 /* ==========================================
    Parking Yetu - Complete CSS
    ========================================== */
@@ -18,41 +14,46 @@ cat > css/main.css << 'EOF'
     --bg-card: rgba(255, 255, 255, 0.04);
     --bg-card-hover: rgba(255, 255, 255, 0.08);
     --text-primary: #FFFFFF;
-    --text-secondary: #B8B8D0;
-    --text-muted: #6A6A8A;
-    --glass-bg: rgba(255, 255, 255, 0.04);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.4);
+    --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --gradient-primary: linear-gradient(135deg, #6C3CE1, #00D4FF);
-    --transition-speed: 0.3s;
+    --radius: 16px;
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 body {
-    font-family: 'Inter', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
     background: var(--bg-primary);
-    min-height: 100vh;
-    padding: 15px 15px 80px;
     color: var(--text-primary);
+    min-height: 100vh;
     overflow-x: hidden;
+    transition: background var(--transition), color var(--transition);
 }
 
-.container {
-    max-width: 700px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
+body.light-theme {
+    --bg-primary: #f0f0f5;
+    --bg-secondary: #e8e8ef;
+    --text-primary: #1a1a2e;
+    --text-secondary: rgba(0, 0, 0, 0.7);
+    --text-muted: rgba(0, 0, 0, 0.4);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --bg-card: rgba(0, 0, 0, 0.04);
+    --bg-card-hover: rgba(0, 0, 0, 0.08);
 }
 
 /* ==========================================
    AUTH SCREEN
    ========================================== */
+
 .auth-screen {
     display: flex;
     align-items: center;
@@ -63,961 +64,543 @@ body {
     z-index: 1;
 }
 
-.auth-screen.hidden {
-    display: none;
-}
-
 .auth-box {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
-    border-radius: 32px;
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
     padding: 40px 32px;
     max-width: 420px;
     width: 100%;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease;
+    box-shadow: var(--shadow);
 }
 
 .auth-box h2 {
-    font-family: 'Orbitron', monospace;
     font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
     text-align: center;
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .auth-box .sub {
-    text-align: center;
-    color: var(--text-muted);
     font-size: 14px;
-    margin-bottom: 24px;
-    letter-spacing: 2px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 28px;
 }
 
 .auth-box input,
 .auth-box select {
     width: 100%;
-    padding: 14px 18px;
-    margin: 8px 0;
-    font-size: 16px;
-    border-radius: 16px;
+    padding: 12px 16px;
+    border-radius: 12px;
     border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    min-height: 52px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-size: 16px;
+    margin-bottom: 12px;
+    transition: border-color var(--transition);
+    font-family: inherit;
 }
 
 .auth-box input:focus,
 .auth-box select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 20px rgba(108, 60, 225, 0.15);
+    box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-.auth-box .auth-error {
+.auth-box input::placeholder {
+    color: var(--text-muted);
+}
+
+.auth-error {
+    display: none;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: rgba(255, 45, 85, 0.1);
     color: var(--danger);
     font-size: 14px;
-    text-align: center;
-    display: none;
-    margin-top: 10px;
-    padding: 10px;
-    background: rgba(255, 45, 85, 0.08);
-    border-radius: 12px;
+    border: 1px solid rgba(255, 45, 85, 0.2);
 }
 
-.auth-box .auth-error.show {
+.auth-error.show {
     display: block;
+    animation: fadeIn 0.3s ease;
 }
 
-.auth-box .auth-switch {
+.auth-switch {
     text-align: center;
-    color: var(--text-muted);
-    font-size: 14px;
     margin-top: 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
 }
 
-.auth-box .auth-switch span {
-    color: var(--secondary);
+.auth-switch span {
+    color: var(--primary);
     cursor: pointer;
     font-weight: 600;
-    transition: color 0.3s ease;
+    transition: opacity var(--transition);
 }
 
-/* ==========================================
-   BACKGROUND TRANSPORT
-   ========================================== */
-.transport-bg {
-    position: fixed;
-    bottom: 0;
-    font-size: 24px;
-    z-index: 0;
-    opacity: 0.22;
-    pointer-events: none;
-    white-space: nowrap;
-    user-select: none;
-    will-change: transform;
-}
-
-.transport-right {
-    animation: moveRight linear infinite;
-}
-
-.transport-left {
-    animation: moveLeft linear infinite;
-}
-
-@keyframes moveRight {
-    0% { transform: translateX(-200px) scaleX(1) translateZ(0); }
-    100% { transform: translateX(calc(100vw + 200px)) scaleX(1) translateZ(0); }
-}
-
-@keyframes moveLeft {
-    0% { transform: translateX(calc(100vw + 200px)) scaleX(-1) translateZ(0); }
-    100% { transform: translateX(-200px) scaleX(-1) translateZ(0); }
-}
-
-.transport-slow { animation-duration: 40s; }
-.transport-medium { animation-duration: 30s; }
-.transport-fast { animation-duration: 20s; }
-
-.transport-y-1 { bottom: 5%; }
-.transport-y-2 { bottom: 15%; }
-.transport-y-3 { bottom: 25%; }
-.transport-y-4 { bottom: 35%; }
-.transport-y-5 { bottom: 45%; }
-.transport-y-6 { bottom: 55%; }
-.transport-y-7 { bottom: 65%; }
-.transport-y-8 { bottom: 75%; }
-
-.transport-small { font-size: 14px; }
-.transport-medium-size { font-size: 24px; }
-.transport-large { font-size: 30px; }
-
-/* ==========================================
-   CARDS
-   ========================================== */
-.card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 24px;
-    margin-bottom: 16px;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-    overflow: hidden;
-    will-change: transform;
-}
-
-.card:hover {
-    transform: translateY(-4px) translateZ(0);
-    border-color: rgba(108, 60, 225, 0.2);
-    box-shadow: 0 12px 40px rgba(108, 60, 225, 0.15);
-}
-
-.card h3 {
-    font-family: 'Orbitron', monospace;
-    font-size: 16px;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.card h3 .accent {
-    color: var(--secondary);
-}
-
-/* ==========================================
-   BUTTONS
-   ========================================== */
-button {
-    width: 100%;
-    padding: 16px;
-    margin: 6px 0;
-    font-size: 18px;
-    font-weight: 600;
-    border-radius: 16px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    font-family: 'Inter', sans-serif;
-    text-transform: uppercase;
-    min-height: 56px;
-    position: relative;
-    overflow: hidden;
-    will-change: transform;
-}
-
-button:hover {
-    transform: translateY(-2px) translateZ(0);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-}
-
-.btn-primary {
-    background: var(--gradient-primary);
-    color: white;
-    box-shadow: 0 4px 20px rgba(108, 60, 225, 0.3);
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, #00D4FF, #00FF88);
-    color: var(--bg-primary);
-    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
-}
-
-.btn-danger {
-    background: linear-gradient(135deg, #FF2D55, #FF6B6B);
-    color: white;
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #00FF88, #00D4AA);
-    color: var(--bg-primary);
-}
-
-.btn-ghost {
-    background: var(--glass-bg);
-    color: var(--text-secondary);
-    border: 1px solid var(--glass-border);
-}
-
-/* ==========================================
-   LAYOUT
-   ========================================== */
-.grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    margin: 15px 0;
-}
-
-.stat-box {
-    background: var(--glass-bg);
-    padding: 15px 10px;
-    border-radius: 16px;
-    text-align: center;
-    border: 1px solid var(--glass-border);
-    transition: all 0.3s ease;
-}
-
-.stat-box .stat-number {
-    font-family: 'Orbitron', monospace;
-    font-size: 28px;
-    font-weight: 700;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.stat-box .stat-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* ==========================================
-   VEHICLE GRID
-   ========================================== */
-.vehicle-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 8px;
-    margin: 10px 0;
-}
-
-.vehicle-grid button {
-    padding: 14px 6px;
-    font-size: 13px;
-    background: var(--glass-bg);
-    color: var(--text-secondary);
-    border: 1px solid var(--glass-border);
-    border-radius: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-height: 72px;
-    text-transform: uppercase;
-    font-family: 'Inter', sans-serif;
-}
-
-.vehicle-grid button.vehicle-active {
-    border-color: var(--primary);
-    background: var(--gradient-primary);
-    color: white;
-}
-
-.vehicle-grid button .vehicle-icon {
-    display: block;
-    font-size: 28px;
-    margin-bottom: 4px;
+.auth-switch span:hover {
+    opacity: 0.8;
+    text-decoration: underline;
 }
 
 /* ==========================================
    THEME TOGGLE
    ========================================== */
+
 .theme-toggle {
     position: fixed;
     top: 20px;
-    right: 80px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
+    right: 20px;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    color: var(--text-secondary);
-    font-size: 24px;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
     cursor: pointer;
-    z-index: 100;
-    transition: all 0.3s ease;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    transition: all var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: auto;
-    padding: 0;
 }
 
 .theme-toggle:hover {
-    transform: rotate(30deg) scale(1.1);
-    border-color: var(--primary);
+    transform: scale(1.05);
+    background: var(--bg-card-hover);
 }
 
 /* ==========================================
-   LIGHT THEME
+   TRANSPORT BACKGROUND
    ========================================== */
-body.light-theme {
-    --bg-primary: #F5F5FA;
-    --bg-secondary: #FFFFFF;
-    --text-primary: #1A1A2E;
-    --text-secondary: #4A4A6A;
-    --text-muted: #8A8AAA;
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(0, 0, 0, 0.08);
+
+
+
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--primary-glow);
 }
 
-body.light-theme .card {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
-body.light-theme .header {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.08);
+.btn-secondary {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-card-hover);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--danger), #FF0044);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: all var(--transition);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255, 45, 85, 0.3);
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==========================================
+   MODALS
+   ========================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: 24px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all var(--transition);
+}
+
+.modal-close:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+/* ==========================================
+   TOASTS
+   ========================================== */
+
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 90%;
+}
+
+.toast {
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-size: 14px;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.3s ease;
+    backdrop-filter: blur(10px);
+    text-align: center;
+    min-width: 200px;
+}
+
+.toast-success {
+    border-color: var(--accent);
+    background: rgba(0, 255, 136, 0.1);
+    color: var(--accent);
+}
+
+.toast-error {
+    border-color: var(--danger);
+    background: rgba(255, 45, 85, 0.1);
+    color: var(--danger);
+}
+
+.toast-info {
+    border-color: var(--secondary);
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--secondary);
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* ==========================================
    RESPONSIVE
    ========================================== */
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-    .stat-box .stat-number {
-        font-size: 22px;
-    }
-    .grid-2 {
-        grid-template-columns: 1fr;
-    }
-    .vehicle-grid {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-    }
-    .vehicle-grid button {
-        font-size: 11px;
-        padding: 12px 4px;
-        min-height: 64px;
-    }
-    .theme-toggle {
-        top: 20px;
-        right: 70px;
-        width: 38px;
-        height: 38px;
-        font-size: 16px;
-    }
-    .transport-bg {
-        display: none !important;
-    }
-}
-
-@media (max-width: 380px) {
-    .vehicle-grid {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .transport-bg {
-        display: none !important;
-    }
-    .card:hover {
-        transform: none !important;
-    }
-    button:hover {
-        transform: none !important;
-    }
-}
-EOF
-
-echo "✅ CSS restored!"
-wc -l css/main.css
-ls -lh css/main.css
-
-
-body.light-theme .transport-bg {
-    color: rgba(0, 0, 0, 0.25);
-    opacity: 0.10;
-}
-
-/* ==========================================
-   Fix Button Text Visibility
-   ========================================== */
-
-/* Force buttons to have readable text */
-.btn-primary,
-.btn-secondary,
-.btn-danger,
-.btn-success {
-    color: #FFFFFF !important;
-}
-
-/* Light theme button fixes */
-body.light-theme .btn-primary,
-body.light-theme .btn-secondary,
-body.light-theme .btn-danger,
-body.light-theme .btn-success {
-    color: #FFFFFF !important;
-}
-
-/* Ensure button text is always visible */
-button {
-    color: #FFFFFF !important;
-}
-
-/* Fix dark mode text */
-.btn-primary {
-    background: var(--gradient-primary) !important;
-    color: #FFFFFF !important;
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, #00D4FF, #00FF88) !important;
-    color: #1A1A2E !important;  /* Dark text on light gradient */
-}
-
-/* Light theme overrides */
-body.light-theme .btn-primary {
-    color: #FFFFFF !important;
-}
-
-body.light-theme .btn-secondary {
-    color: #1A1A2E !important;
-}
-
-/* Generic button text */
-button {
-    font-weight: 600 !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-}
-
-/* ==========================================
-   Auth Box - Better Contrast
-   ========================================== */
-
-.auth-box {
-    background: rgba(20, 20, 40, 0.85) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
-}
-
-.auth-box input,
-.auth-box select {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    color: #FFFFFF !important;
-}
-
-.auth-box input::placeholder {
-    color: #8A8AAA !important;
-}
-
-/* Light theme auth box */
-body.light-theme .auth-box {
-    background: rgba(255, 255, 255, 0.85) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-}
-
-body.light-theme .auth-box input,
-body.light-theme .auth-box select {
-    background: rgba(0, 0, 0, 0.04) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    color: #1A1A2E !important;
-}
-
-body.light-theme .auth-box input::placeholder {
-    color: #8A8AAA !important;
-}
-
-body.light-theme .auth-box h2 {
-    -webkit-text-fill-color: #6C3CE1 !important;
-}
-
-/* ==========================================
-   Mobile Fixes
-   ========================================== */
 
 @media (max-width: 480px) {
     .auth-box {
-        padding: 24px 16px !important;
-        margin: 10px !important;
-    }
-    
-    .btn-primary,
-    .btn-secondary,
-    .btn-danger,
-    .btn-success {
-        font-size: 14px !important;
-        padding: 14px !important;
-        min-height: 48px !important;
+        padding: 28px 20px;
     }
     
     .auth-box h2 {
-        font-size: 22px !important;
+        font-size: 24px;
+    }
+    
+    .modal-content {
+        padding: 16px;
+        border-radius: 16px;
+    }
+    
+    .toast {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-width: 160px;
     }
 }
 
 /* ==========================================
-   LOGIN TEXT - HIGH CONTRAST
+   BACKGROUND CARS - IMPROVED
    ========================================== */
 
-.auth-box h2 {
-    font-family: 'Orbitron', 'Courier New', monospace;
-    font-size: 28px;
-    text-align: center;
-    margin-bottom: 4px;
-    /* Force gradient to be visible on dark background */
-    background: linear-gradient(135deg, #6C3CE1, #00D4FF) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-    color: #6C3CE1 !important; /* Fallback */
-}
 
-.auth-box .sub {
-    text-align: center;
-    color: #B8B8D0 !important;
-    font-size: 14px;
-    margin-bottom: 24px;
-    letter-spacing: 2px;
-    font-weight: 300;
-}
+/* Different sizes for variety */
+.transport-small { font-size: 24px; opacity: 0.06; }
+.transport-medium { font-size: 36px; opacity: 0.09; }
+.transport-large { font-size: 48px; opacity: 0.07; }
 
-/* Login/Register labels */
-.auth-box label {
-    color: #B8B8D0 !important;
-    font-size: 13px;
-    font-weight: 500;
-}
+/* Direction */
 
-/* Input fields - light on dark */
-.auth-box input,
-.auth-box select {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    color: #FFFFFF !important;
-    font-size: 16px;
-}
-
-.auth-box input:focus,
-.auth-box select:focus {
-    border-color: #6C3CE1 !important;
-    box-shadow: 0 0 20px rgba(108, 60, 225, 0.2) !important;
-}
-
-.auth-box input::placeholder {
-    color: #8A8AAA !important;
-    font-weight: 300;
-}
-
-/* Auth switch text */
-.auth-box .auth-switch {
-    color: #8A8AAA !important;
-    font-size: 14px;
-}
-
-.auth-box .auth-switch span {
-    color: #00D4FF !important;
-    cursor: pointer;
-    font-weight: 600;
-    transition: color 0.3s ease;
-}
-
-.auth-box .auth-switch span:hover {
-    color: #6C3CE1 !important;
-}
-
-/* Error messages */
-.auth-box .auth-error {
-    color: #FF2D55 !important;
-    background: rgba(255, 45, 85, 0.1) !important;
-    border: 1px solid rgba(255, 45, 85, 0.2) !important;
-    padding: 10px !important;
-    border-radius: 12px !important;
-}
-
-/* ==========================================
-   LIGHT THEME - LOGIN TEXT
-   ========================================== */
-
-body.light-theme .auth-box h2 {
-    background: linear-gradient(135deg, #6C3CE1, #00D4FF) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    background-clip: text !important;
-}
-
-body.light-theme .auth-box .sub {
-    color: #4A4A6A !important;
-}
-
-body.light-theme .auth-box input,
-body.light-theme .auth-box select {
-    background: rgba(0, 0, 0, 0.04) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    color: #1A1A2E !important;
-}
-
-body.light-theme .auth-box input::placeholder {
-    color: #8A8AAA !important;
-}
-
-body.light-theme .auth-box .auth-switch {
-    color: #6A6A8A !important;
-}
-
-body.light-theme .auth-box .auth-switch span {
-    color: #6C3CE1 !important;
-}
-
-/* ==========================================
-   LOGIN PAGE BACKGROUND
-   ========================================== */
-
-.auth-screen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
-    position: relative;
-    z-index: 1;
-    background: var(--bg-primary) !important;
-}
-
-/* Dark background for login */
-body:not(.light-theme) .auth-screen {
-    background: #0A0A0F !important;
-}
-
-body.light-theme .auth-screen {
-    background: #F5F5FA !important;
-}
-
-/* Auth box glass effect */
-.auth-box {
-    background: rgba(20, 20, 40, 0.85) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
-}
-
-body.light-theme .auth-box {
-    background: rgba(255, 255, 255, 0.9) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06) !important;
-}
-
-/* ==========================================
-   WALLPAPER - VISIBLE IN ALL MODES
-   ========================================== */
-
-/* Base wallpaper */
-.transport-bg {
-    position: fixed;
-    bottom: 0;
-    font-size: 28px; /* Bigger cars */
-    z-index: 0;
-    opacity: 0.25; /* Increased from 0.03 */
-    pointer-events: none;
-    white-space: nowrap;
-    user-select: none;
-    will-change: transform;
-    color: rgba(255, 255, 255, 0.5); /* Brighter */
-    text-shadow: 0 0 20px rgba(108, 60, 225, 0.2);
-}
-
-/* Dark mode - visible and bright */
-body:not(.light-theme) .transport-bg {
-    color: rgba(255, 255, 255, 0.4) !important;
-    opacity: 0.15 !important;
-    text-shadow: 0 0 30px rgba(108, 60, 225, 0.3);
-}
-
-/* Light mode - also visible */
-body.light-theme .transport-bg {
-    color: rgba(0, 0, 0, 0.25) !important;
-    opacity: 0.12 !important;
-    text-shadow: 0 0 20px rgba(108, 60, 225, 0.1);
-}
-
-/* Individual car classes with different opacities */
-.transport-y-1 { bottom: 5%; opacity: 0.22; }
-.transport-y-2 { bottom: 13%; opacity: 0.14; }
-.transport-y-3 { bottom: 21%; opacity: 0.16; }
-.transport-y-4 { bottom: 29%; opacity: 0.18; }
-.transport-y-5 { bottom: 37%; opacity: 0.20; }
-.transport-y-6 { bottom: 45%; opacity: 0.22; }
-.transport-y-7 { bottom: 53%; opacity: 0.24; }
-.transport-y-8 { bottom: 61%; opacity: 0.26; }
-
-/* Dark mode - even brighter */
-body:not(.light-theme) .transport-y-1 { opacity: 0.20 !important; }
-body:not(.light-theme) .transport-y-2 { opacity: 0.22 !important; }
-body:not(.light-theme) .transport-y-3 { opacity: 0.25 !important; }
-body:not(.light-theme) .transport-y-4 { opacity: 0.28 !important; }
-body:not(.light-theme) .transport-y-5 { opacity: 0.30 !important; }
-body:not(.light-theme) .transport-y-6 { opacity: 0.32 !important; }
-body:not(.light-theme) .transport-y-7 { opacity: 0.34 !important; }
-body:not(.light-theme) .transport-y-8 { opacity: 0.36 !important; }
-
-/* Mobile visibility */
-@media (max-width: 480px) {
-    .transport-bg {
-        font-size: 18px !important;
-        opacity: 0.10 !important;
-    }
-    body:not(.light-theme) .transport-bg {
-        opacity: 0.12 !important;
-    }
-}
-
-/* Add glow behind cars for dark mode */
-body:not(.light-theme) .transport-bg::before {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
+.transport-right::before {
     right: 0;
-    height: 100px;
-    background: linear-gradient(to top, rgba(108, 60, 225, 0.05), transparent);
-    pointer-events: none;
-    z-index: -1;
+    background: linear-gradient(to left, var(--bg-primary), transparent);
 }
+
+.transport-left::before {
+    left: 0;
+    background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+
+/* Light theme adjustments */
+
 
 /* ==========================================
-   WALLPAPER - ALWAYS VISIBLE
+   BACKGROUND CARS - FIXED DIRECTION
    ========================================== */
 
-/* Base wallpaper - ALWAYS visible */
-.transport-bg {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    font-size: 28px;
-    z-index: 0;
-    pointer-events: none;
-    white-space: nowrap;
-    user-select: none;
-    will-change: transform;
-    width: 100%;
-    overflow: hidden;
-}
 
-/* Dark mode - bright cars */
-.transport-bg {
-    color: rgba(255, 255, 255, 0.25) !important;
-    opacity: 0.12 !important;
-    text-shadow: 0 0 30px rgba(108, 60, 225, 0.2);
-}
+/* Different sizes for variety */
+.transport-small { font-size: 24px; opacity: 0.06; }
+.transport-medium { font-size: 36px; opacity: 0.09; }
+.transport-large { font-size: 48px; opacity: 0.07; }
 
-/* Light mode - dark cars */
-body.light-theme .transport-bg {
-    color: rgba(0, 0, 0, 0.20) !important;
-    opacity: 0.10 !important;
-    text-shadow: 0 0 20px rgba(108, 60, 225, 0.05);
-}
+/* Direction - RIGHT TO LEFT (normal driving direction) */
 
-/* Cars by layer - progressive visibility */
-.transport-y-1 { bottom: 5%; opacity: 0.15 !important; }
-.transport-y-2 { bottom: 13%; opacity: 0.18 !important; }
-.transport-y-3 { bottom: 21%; opacity: 0.21 !important; }
-.transport-y-4 { bottom: 29%; opacity: 0.24 !important; }
-.transport-y-5 { bottom: 37%; opacity: 0.27 !important; }
-.transport-y-6 { bottom: 45%; opacity: 0.30 !important; }
-.transport-y-7 { bottom: 53%; opacity: 0.33 !important; }
-.transport-y-8 { bottom: 61%; opacity: 0.36 !important; }
-
-/* Dark mode - even brighter */
-body:not(.light-theme) .transport-y-1 { opacity: 0.20 !important; }
-body:not(.light-theme) .transport-y-2 { opacity: 0.23 !important; }
-body:not(.light-theme) .transport-y-3 { opacity: 0.26 !important; }
-body:not(.light-theme) .transport-y-4 { opacity: 0.29 !important; }
-body:not(.light-theme) .transport-y-5 { opacity: 0.32 !important; }
-body:not(.light-theme) .transport-y-6 { opacity: 0.35 !important; }
-body:not(.light-theme) .transport-y-7 { opacity: 0.38 !important; }
-body:not(.light-theme) .transport-y-8 { opacity: 0.42 !important; }
-
-/* Light mode - visible but subtle */
-body.light-theme .transport-y-1 { opacity: 0.12 !important; }
-body.light-theme .transport-y-2 { opacity: 0.14 !important; }
-body.light-theme .transport-y-3 { opacity: 0.16 !important; }
-body.light-theme .transport-y-4 { opacity: 0.18 !important; }
-body.light-theme .transport-y-5 { opacity: 0.20 !important; }
-body.light-theme .transport-y-6 { opacity: 0.22 !important; }
-body.light-theme .transport-y-7 { opacity: 0.24 !important; }
-body.light-theme .transport-y-8 { opacity: 0.26 !important; }
-
-/* Size classes */
-.transport-small { font-size: 16px; }
-.transport-medium-size { font-size: 22px; }
-.transport-large { font-size: 30px; }
-.transport-huge { font-size: 38px; }
-
-/* Car animations - always running */
-.transport-right {
-    animation: moveRight linear infinite;
-}
-
-.transport-left {
-    animation: moveLeft linear infinite;
-}
-
-@keyframes moveRight {
-    0% { transform: translateX(-200px) scaleX(1); }
-    100% { transform: translateX(calc(100vw + 200px)) scaleX(1); }
-}
-
-@keyframes moveLeft {
-    0% { transform: translateX(calc(100vw + 200px)) scaleX(-1); }
-    100% { transform: translateX(-200px) scaleX(-1); }
-}
+/* Direction - LEFT TO RIGHT (opposite lane) */
 
 /* Speed variations */
 .transport-slow { animation-duration: 45s; }
-.transport-medium { animation-duration: 30s; }
-.transport-fast { animation-duration: 20s; }
-.transport-very-fast { animation-duration: 14s; }
+.transport-medium-slow { animation-duration: 30s; }
+.transport-medium-fast { animation-duration: 20s; }
+.transport-fast { animation-duration: 12s; }
+
+/* Vertical positions */
+.transport-y-1 { top: 5%; }
+.transport-y-2 { top: 12%; }
+.transport-y-3 { top: 19%; }
+.transport-y-4 { top: 26%; }
+.transport-y-5 { top: 33%; }
+.transport-y-6 { top: 40%; }
+.transport-y-7 { top: 47%; }
+.transport-y-8 { top: 54%; }
+.transport-y-9 { top: 61%; }
+.transport-y-10 { top: 68%; }
+.transport-y-11 { top: 75%; }
+.transport-y-12 { top: 82%; }
+.transport-y-13 { top: 89%; }
+
+/* RIGHT TO LEFT - Cars moving right to left (normal traffic) */
+    0% { transform: translateX(calc(100vw + 150px)); }
+    100% { transform: translateX(-150px); }
+}
+
+/* LEFT TO RIGHT - Cars moving left to right (opposite lane) */
+    0% { transform: translateX(-150px); }
+    100% { transform: translateX(calc(100vw + 150px)); }
+}
+
+/* Fade edges - subtle gradient on sides */
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100px;
+    pointer-events: none;
+}
+
+.transport-right::before {
+    left: 0;
+    background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+
+.transport-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100px;
+    pointer-events: none;
+    background: linear-gradient(to left, var(--bg-primary), transparent);
+}
+
+.transport-left::before {
+    left: 0;
+    background: linear-gradient(to right, var(--bg-primary), transparent);
+}
+
+.transport-left::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100px;
+    pointer-events: none;
+    background: linear-gradient(to left, var(--bg-primary), transparent);
+}
+
+/* Light theme adjustments */
+
 
 /* ==========================================
-   FULL SCREEN RESPONSIVE
+   BACKGROUND CARS - WORKING
    ========================================== */
 
-/* All screens - 100% coverage */
-html, body {
-    min-height: 100vh;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    white-space: nowrap;
+    opacity: 0.08;
+    user-select: none;
+    font-size: 32px;
+    animation: drive linear infinite;
 }
 
-/* Desktop */
-@media (min-width: 1025px) {
-    .transport-bg {
-        font-size: 32px;
-    }
-    .transport-y-1 { bottom: 5%; }
-    .transport-y-2 { bottom: 13%; }
-    .transport-y-3 { bottom: 21%; }
-    .transport-y-4 { bottom: 29%; }
-    .transport-y-5 { bottom: 37%; }
-    .transport-y-6 { bottom: 45%; }
-    .transport-y-7 { bottom: 53%; }
-    .transport-y-8 { bottom: 61%; }
+.transport-small { font-size: 24px; opacity: 0.06; }
+.transport-medium { font-size: 36px; opacity: 0.09; }
+.transport-large { font-size: 48px; opacity: 0.07; }
+
+.transport-right { animation-direction: normal; }
+.transport-left { animation-direction: reverse; }
+
+.transport-slow { animation-duration: 40s; }
+.transport-medium-slow { animation-duration: 28s; }
+.transport-medium-fast { animation-duration: 18s; }
+.transport-fast { animation-duration: 10s; }
+
+.transport-y-1 { top: 5%; }
+.transport-y-2 { top: 12%; }
+.transport-y-3 { top: 19%; }
+.transport-y-4 { top: 26%; }
+.transport-y-5 { top: 33%; }
+.transport-y-6 { top: 40%; }
+.transport-y-7 { top: 47%; }
+.transport-y-8 { top: 54%; }
+.transport-y-9 { top: 61%; }
+.transport-y-10 { top: 68%; }
+.transport-y-11 { top: 75%; }
+.transport-y-12 { top: 82%; }
+.transport-y-13 { top: 89%; }
+
+    0% { transform: translateX(-200px); }
+    100% { transform: translateX(calc(100vw + 200px)); }
 }
 
-/* Tablet */
-@media (max-width: 1024px) and (min-width: 769px) {
-    .transport-bg {
-        font-size: 26px;
-    }
-    .transport-y-1 { bottom: 4%; }
-    .transport-y-2 { bottom: 12%; }
-    .transport-y-3 { bottom: 20%; }
-    .transport-y-4 { bottom: 28%; }
-    .transport-y-5 { bottom: 36%; }
-    .transport-y-6 { bottom: 44%; }
-    .transport-y-7 { bottom: 52%; }
-    .transport-y-8 { bottom: 60%; }
+/* Light theme adjustments */
+    opacity: 0.06;
 }
 
-/* Mobile Landscape */
-@media (max-width: 768px) and (min-width: 481px) {
-    .transport-bg {
-        font-size: 20px;
-    }
-    .transport-y-1 { bottom: 3%; }
-    .transport-y-2 { bottom: 11%; }
-    .transport-y-3 { bottom: 19%; }
-    .transport-y-4 { bottom: 27%; }
-    .transport-y-5 { bottom: 35%; }
-    .transport-y-6 { bottom: 43%; }
-    .transport-y-7 { bottom: 51%; }
-    .transport-y-8 { bottom: 59%; }
+/* ==========================================
+   TEXT READABILITY - GLOBAL IMPROVEMENTS
+   ========================================== */
+
+/* Ensure all text has contrast */
+body {
+    color: var(--text-primary);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Mobile Portrait */
-@media (max-width: 480px) {
-    .transport-bg {
-        font-size: 16px;
-    }
-    .transport-y-1 { bottom: 2%; }
-    .transport-y-2 { bottom: 10%; }
-    .transport-y-3 { bottom: 18%; }
-    .transport-y-4 { bottom: 26%; }
-    .transport-y-5 { bottom: 34%; }
-    .transport-y-6 { bottom: 42%; }
-    .transport-y-7 { bottom: 50%; }
-    .transport-y-8 { bottom: 58%; }
+/* Glass cards with proper background */
+.glass-card,
+.widget {
+    background: rgba(10, 10, 15, 0.55) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Small phones */
-@media (max-width: 380px) {
-    .transport-bg {
-        font-size: 13px;
-    }
-    .transport-y-1 { bottom: 1%; }
-    .transport-y-2 { bottom: 9%; }
-    .transport-y-3 { bottom: 17%; }
-    .transport-y-4 { bottom: 25%; }
-    .transport-y-5 { bottom: 33%; }
-    .transport-y-6 { bottom: 41%; }
-    .transport-y-7 { bottom: 49%; }
-    .transport-y-8 { bottom: 57%; }
+/* Light theme glass */
+body.light-theme .glass-card,
+body.light-theme .widget {
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    .transport-right,
-    .transport-left {
-        animation: none !important;
-    }
-    .transport-bg {
-        opacity: 0.05 !important;
-    }
+/* Text shadow for all content */
+#app,
+.dashboard,
+.widget-content,
+.auth-box {
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme #app,
+body.light-theme .dashboard,
+body.light-theme .widget-content {
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.15);
 }

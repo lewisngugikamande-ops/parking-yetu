@@ -8,20 +8,38 @@ let currentApp = null;
 let container = null;
 let routes = new Map();
 let currentAppInstance = null;
+let popStateHandler = null;
 
 export function initRouter(containerElement) {
     container = containerElement;
     console.log('🗺️ Router initialized');
     
-    window.addEventListener('popstate', () => {
+    // Handle browser back/forward
+    popStateHandler = () => {
         const path = window.location.pathname || '/';
         handleRoute(path);
-    });
+    };
+    window.addEventListener('popstate', popStateHandler);
     
     const initialPath = window.location.pathname || '/';
     handleRoute(initialPath);
     
-    return true;
+    // Return cleanup function
+    return function cleanup() {
+        console.log('🗺️ Cleaning up router...');
+        if (popStateHandler) {
+            window.removeEventListener('popstate', popStateHandler);
+            popStateHandler = null;
+        }
+        // Unmount current app
+        if (currentAppInstance && currentAppInstance.unmount) {
+            currentAppInstance.unmount();
+            currentAppInstance = null;
+        }
+        currentApp = null;
+        container = null;
+        console.log('🗺️ Router cleaned up');
+    };
 }
 
 export function addRoute(path, appId) {

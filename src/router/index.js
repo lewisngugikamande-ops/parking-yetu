@@ -128,3 +128,15 @@ export default {
     goToOrgAdmin,
     createNavButtons
 };
+
+// Expose router to window for debugging
+if (typeof window !== 'undefined') {
+    window.__router = {
+        getCurrentApp: () => currentApp,
+        getAppList: () => getAppList(),
+        navigateTo: navigateTo,
+        mountApp: mountApp,
+        getCurrentAppInstance: getCurrentAppInstance
+    };
+    console.log('🗺️ Router exposed as window.__router');
+}

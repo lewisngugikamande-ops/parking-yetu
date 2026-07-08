@@ -1,14 +1,9 @@
-// @access-engine/engine
-
-// Domain Models
-const Identity = require('./identity/Identity');
-const Credential = require('./credential/Credential');
-const Membership = require('./membership/Membership');
-const Policy = require('./policy/Policy');
-const Session = require('./session/Session');
-
-// Access Engine
 const AccessEngine = require('./AccessEngine');
+const { Identity } = require('@access-engine/foundation');
+const { Credential } = require('@access-engine/foundation');
+const { Membership } = require('@access-engine/foundation');
+const { Policy } = require('@access-engine/foundation');
+const { Session } = require('@access-engine/foundation');
 
 module.exports = {
   AccessEngine,

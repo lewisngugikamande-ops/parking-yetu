@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parking Yetu - Smart Parking</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/atmosphere.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            min-height: 100vh; 
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+        body.light-theme { 
+            background: #f0f0f5; 
+            color: #1a1a2e; 
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--primary), #7C4CFF);
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(108, 60, 225, 0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #FF0044);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255, 45, 85, 0.3); }
+        .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover { background: var(--bg-card-hover); }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .auth-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .auth-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px 32px;
+            max-width: 420px;
+            width: 100%;
+            animation: fadeIn 0.5s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        body.light-theme .auth-box {
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .auth-box h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .auth-box .sub {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .auth-box input, .auth-box select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        body.light-theme .auth-box input,
+        body.light-theme .auth-box select {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+            color: #1a1a2e;
+        }
+        .auth-box input:focus, .auth-box select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        .auth-box input::placeholder {
+            color: var(--text-muted);
+        }
+        .auth-error {
+            display: none;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: rgba(255,45,85,0.1);
+            color: var(--danger);
+            font-size: 14px;
+            border: 1px solid rgba(255,45,85,0.2);
+        }
+        .auth-error.show { display: block; animation: fadeIn 0.3s ease; }
+        .auth-switch {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .auth-switch span {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .auth-switch span:hover { opacity: 0.8; text-decoration: underline; }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle:hover { transform: scale(1.05); background: var(--bg-card-hover); }
+        #appContainer { display: none; z-index: 1; position: relative; }
+        #app { min-height: 100vh; }
+    </style>
+</head>
+<body>
+    <!-- ==========================================
+    BACKGROUND - MOVING VEHICLES
+    ========================================== -->
+    <!-- Right-moving vehicles -->
+    <div class="transport-bg transport-right transport-slow transport-y-1 transport-large">🚗 🚙 🚘</div>
+    <div class="transport-bg transport-right transport-medium-slow transport-y-4 transport-medium">🚐 🚑 🚒</div>
+    <div class="transport-bg transport-right transport-medium-fast transport-y-7 transport-small">🚓 🚔 🏎️</div>
+    <div class="transport-bg transport-right transport-fast transport-y-10 transport-medium">🛵 🏍️ 🚲</div>
+    <div class="transport-bg transport-right transport-slow transport-y-13 transport-small">🚗 🚕 🚙</div>
+    
+    <!-- Left-moving vehicles -->
+    <div class="transport-bg transport-left transport-slow transport-y-2 transport-medium">🚌 🚎 🚐</div>
+    <div class="transport-bg transport-left transport-medium-slow transport-y-5 transport-large">🚛 🚚 🚒</div>
+    <div class="transport-bg transport-left transport-medium-fast transport-y-8 transport-small">🚗 🚙 🚘</div>
+    <div class="transport-bg transport-left transport-fast transport-y-11 transport-medium">🏎️ 🏍️ 🚲</div>
+    <div class="transport-bg transport-left transport-slow transport-y-3 transport-small">🚕 🚗 🚙</div>
+    <div class="transport-bg transport-left transport-medium-slow transport-y-6 transport-medium">🚐 🚑 🚒</div>
+    <div class="transport-bg transport-left transport-medium-fast transport-y-9 transport-small">🚓 🚔 🏎️</div>
+    <div class="transport-bg transport-left transport-fast transport-y-12 transport-medium">🛵 🏍️ 🚲</div>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" onclick="window.toggleTheme()">🌙</button>
+
+    <!-- Auth Screen -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-box">
+            <h2>🚗 Parking Yetu</h2>
+            <p class="sub" id="authSubtitle">Smart Parking Platform</p>
+
+            <div id="loginForm">
+                <input type="text" id="loginEmail" placeholder="Username or Email">
+                <input type="password" id="loginPassword" placeholder="Password">
+                <div class="auth-error" id="loginError">Invalid credentials</div>
+                <button onclick="window.handleLogin()" class="btn-primary">🚀 Login</button>
+                <div class="auth-switch">
+                    Don't have an account? <span onclick="window.switchAuthMode('register')">Register</span>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display:none;">
+                <input type="text" id="registerName" placeholder="Full Name">
+                <input type="email" id="registerEmail" placeholder="Email Address">
+                <input type="password" id="registerPassword" placeholder="Password (min 6 chars)">
+                <select id="registerRole">
+                    <option value="admin">👨💼 Admin</option>
+                    <option value="security_manager">👔 Security Manager</option>
+                    <option value="guard">🛡️ Security Guard</option>
+                    <option value="receptionist">📋 Receptionist</option>
+                    <option value="driver">🚗 Driver</option>
+                </select>
+                <div class="auth-error" id="registerError">Registration failed</div>
+                <button onclick="window.handleRegister()" class="btn-primary">✨ Register</button>
+                <div class="auth-switch">
+                    Already have an account? <span onclick="window.switchAuthMode('login')">Login</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" style="display:none;">
+        <div id="app"></div>
+    </div>
+
+    <!-- Main App Entry -->
+    <script type="module" src="/src/index.js"></script>
+</body>
+</html>

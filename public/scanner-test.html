@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner Test</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #0a0a0f; color: #e8e8f0; margin: 0; padding: 20px; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .card { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; margin: 12px 0; border: 1px solid rgba(255,255,255,0.08); }
+        input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #e8e8f0; font-size: 16px; margin-bottom: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 16px; margin-top: 4px; }
+        .btn-primary { background: #6C3CE1; color: white; }
+        .btn-success { background: #00FF88; color: #0a0a0f; }
+        .btn-danger { background: #FF2D55; color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #e8e8f0; }
+        .result { padding: 12px; border-radius: 12px; margin-top: 8px; background: rgba(0,255,136,0.05); border: 1px solid rgba(0,255,136,0.1); }
+        .result.error { background: rgba(255,45,85,0.05); border-color: rgba(255,45,85,0.1); }
+        .hidden { display: none; }
+        .log { font-size: 12px; color: rgba(255,255,255,0.3); padding: 8px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-top: 8px; font-family: monospace; max-height: 200px; overflow-y: auto; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-right: 4px; }
+        .badge.success { background: rgba(0,255,136,0.2); color: #00FF88; }
+        .badge.active { background: rgba(108,60,225,0.2); color: #6C3CE1; }
+        .badge.completed { background: rgba(255,45,85,0.2); color: #FF2D55; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align:center;">📷 QR Scanner Test</h1>
+        <p style="text-align:center;color:rgba(255,255,255,0.4);font-size:14px;">No login required • Local testing</p>
+        
+        <div id="step1" class="card">
+            <h3>1️⃣ Scan Gate QR</h3>
+            <p style="color:rgba(255,255,255,0.5);font-size:14px;">Mock QR data for testing</p>
+            <button class="btn-primary" onclick="scanMockQR()">📸 Scan Mock QR</button>
+            <div id="scanResult" class="log hidden"></div>
+        </div>
+        
+        <div id="step2" class="card hidden">
+            <h3>2️⃣ Identify Yourself</h3>
+            <input id="identifier" placeholder="Enter vehicle plate" value="KDG 832A">
+            <button class="btn-secondary" onclick="identify()">🔍 Identify</button>
+            <button class="btn-secondary" onclick="showRegister()" style="margin-top:4px;">📝 Register New</button>
+            <div id="identifyResult" class="log hidden"></div>
+        </div>
+        
+        <div id="step3" class="card hidden">
+            <h3>3️⃣ Register</h3>
+            <input id="regName" placeholder="Full Name" value="Test User">
+            <input id="regPhone" placeholder="Phone" value="0712345678">
+            <input id="regPlate" placeholder="Vehicle Plate" value="KDG 832A">
+            <input id="regMake" placeholder="Make" value="Toyota">
+            <input id="regModel" placeholder="Model" value="Hilux">
+            <button class="btn-success" onclick="register()">✅ Register & Enter</button>
+            <button class="btn-secondary" onclick="showIdentify()" style="margin-top:4px;">← Back</button>
+            <div id="registerResult" class="log hidden"></div>
+        </div>
+        
+        <div id="step4" class="card hidden">
+            <h3>4️⃣ Session Active</h3>
+            <div id="sessionInfo"></div>
+            <button class="btn-danger" onclick="endVisit()">⏹️ End Visit</button>
+            <div id="endResult" class="log hidden"></div>
+        </div>
+        
+        <div id="step5" class="card hidden">
+            <h3>✅ Visit Complete!</h3>
+            <div id="completeInfo"></div>
+            <button class="btn-primary" onclick="resetAll()">🔄 New Visit</button>
+        </div>
+        
+        <div id="debug" class="card">
+            <h4>📋 Debug</h4>
+            <div id="debugLog" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // INLINE SCANNER - No imports needed
+        // ==========================================
+        
+        // Domain models
+        class AccessPoint {
+            constructor(data) {
+                this.id = data.id || 'ap_' + Date.now();
+                this.organizationId = data.organizationId;
+                this.locationId = data.locationId;
+                this.name = data.name || 'Gate';
+                this.type = data.type || 'gate';
+                this.direction = data.direction || 'entry';
+                this.qrCode = JSON.stringify(data);
+            }
+        }
+
+        class Credential {
+            constructor(data) {
+                this.id = data.id || 'cred_' + Date.now();
+                this.name = data.name || null;
+                this.phone = data.phone || null;
+                this.vehiclePlate = data.vehiclePlate || null;
+                this.vehicleMake = data.vehicleMake || null;
+                this.vehicleModel = data.vehicleModel || null;
+                this.vehicleColor = data.vehicleColor || null;
+                this.organizationId = data.organizationId;
+                this.visitCount = data.visitCount || 0;
+                this.createdAt = new Date();
+                this.updatedAt = new Date();
+            }
+            getVehicleDisplay() {
+                return this.vehiclePlate ? '🚗 ' + this.vehiclePlate : 'No vehicle';
+            }
+            recordVisit() {
+                this.visitCount++;
+                this.updatedAt = new Date();
+            }
+        }
+
+        class Session {
+            constructor(data) {
+                this.id = data.id || 'sess_' + Date.now();
+                this.credentialId = data.credentialId;
+                this.organizationId = data.organizationId;
+                this.accessPointId = data.accessPointId;
+                this.status = 'active';
+                this.entryTime = new Date();
+                this.exitTime = null;
+                this.sessionToken = 'token_' + Date.now() + '_' + Math.random().toString(36).substr(2, 10);
+                this.createdAt = new Date();
+            }
+            isActive() {
+                return this.status === 'active';
+            }
+            complete() {
+                this.status = 'completed';
+                this.exitTime = new Date();
+            }
+            getDuration() {
+                if (this.exitTime) {
+                    return this.exitTime - this.entryTime;
+                }
+                return Date.now() - this.entryTime;
+            }
+            getDurationDisplay() {
+                const ms = this.getDuration();
+                const seconds = Math.floor(ms / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                if (hours > 0) return hours + 'h ' + (minutes % 60) + 'm';
+                if (minutes > 0) return minutes + 'm ' + (seconds % 60) + 's';
+                return seconds + 's';
+            }
+        }
+
+        // State
+        let state = {
+            accessPoint: null,
+            credential: null,
+            session: null
+        };
+
+        let credentialStore = [];
+        let sessionStore = [];
+
+        function findCredential(identifier) {
+            return credentialStore.find(c => 
+                c.vehiclePlate === identifier || 
+                c.phone === identifier ||
+                c.id === identifier
+            ) || null;
+        }
+
+        function findSessionByToken(token) {
+            return sessionStore.find(s => s.sessionToken === token) || null;
+        }
+
+        // Scanner functions
+        function scanGateQR(qrData) {
+            try {
+                let data = typeof qrData === 'string' ? JSON.parse(qrData) : qrData;
+                const accessPoint = new AccessPoint(data);
+                state.accessPoint = accessPoint;
+                log('✅ Access point: ' + accessPoint.name);
+                return { accessPoint };
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+                return { error: error.message };
+            }
+        }
+
+        function identifyVisitor(identifier) {
+            const existing = findCredential(identifier);
+            if (existing) {
+                state.credential = existing;
+                log('👋 Welcome back: ' + (existing.name || existing.vehiclePlate));
+                return { credential: existing, isNew: false, message: 'Welcome back!' };
+            }
+            log('📝 New visitor detected');
+            return { credential: null, isNew: true, message: 'New visitor. Please register.' };
+        }
+
+        function registerVisitor(data) {
+            const credential = new Credential({
+                name: data.name,
+                phone: data.phone,
+                vehiclePlate: data.vehiclePlate,
+                vehicleMake: data.vehicleMake,
+                vehicleModel: data.vehicleModel,
+                organizationId: state.accessPoint?.organizationId
+            });
+            credentialStore.push(credential);
+            state.credential = credential;
+            log('✅ Registered: ' + credential.name);
+            return { credential };
+        }
+
+        function startSession() {
+            if (!state.credential) {
+                return { error: 'No credential found' };
+            }
+            const session = new Session({
+                credentialId: state.credential.id,
+                organizationId: state.accessPoint?.organizationId,
+                accessPointId: state.accessPoint?.id
+            });
+            sessionStore.push(session);
+            state.session = session;
+            state.credential.recordVisit();
+            log('✅ Session started: ' + session.id);
+            return { session, credential: state.credential, accessPoint: state.accessPoint, exitQR: session.sessionToken };
+        }
+
+        function endSession(token) {
+            const session = findSessionByToken(token);
+            if (!session) return { error: 'Invalid session token' };
+            if (!session.isActive()) return { error: 'Session is not active' };
+            session.complete();
+            log('✅ Visit complete: ' + session.getDurationDisplay());
+            return { session, duration: session.getDurationDisplay() };
+        }
+
+        function getState() { return state; }
+        function resetState() {
+            state = { accessPoint: null, credential: null, session: null };
+            log('🔄 Reset state');
+        }
+        function saveCredential(c) { if (!findCredential(c.id)) credentialStore.push(c); }
+        function saveSession(s) { if (!findSessionByToken(s.sessionToken)) sessionStore.push(s); }
+
+        // ==========================================
+        // UI FUNCTIONS
+        // ==========================================
+
+        function log(msg, type = 'info') {
+            const el = document.getElementById('debugLog');
+            if (!el) return;
+            const time = new Date().toLocaleTimeString();
+            el.innerHTML += `<div>[${time}] ${msg}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        const mockQR = {
+            organizationId: 'org_church_a',
+            locationId: 'loc_church_a_main',
+            accessPointId: 'gate_001',
+            name: 'Main Vehicle Gate',
+            direction: 'entry'
+        };
+
+        function scanMockQR() {
+            log('📷 Scanning mock QR...');
+            const result = scanGateQR(mockQR);
+            if (result.error) {
+                document.getElementById('scanResult').innerHTML = `<div class="result error">❌ ${result.error}</div>`;
+                document.getElementById('scanResult').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('scanResult').innerHTML = `<div class="result">✅ Access point: ${result.accessPoint.name}<br>Organization: ${result.accessPoint.organizationId}</div>`;
+            document.getElementById('scanResult').classList.remove('hidden');
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            log('📋 Ready for identification');
+        }
+
+        function identify() {
+            const plate = document.getElementById('identifier').value.trim().toUpperCase();
+            if (!plate) { log('⚠️ Please enter a plate', 'error'); return; }
+            const result = identifyVisitor(plate);
+            if (result.credential) {
+                saveCredential(result.credential);
+                document.getElementById('identifyResult').innerHTML = `<div class="result">✅ ${result.message}</div>`;
+                document.getElementById('identifyResult').classList.remove('hidden');
+                setTimeout(() => startSessionFlow(), 500);
+            } else {
+                document.getElementById('identifyResult').innerHTML = `<div class="result">${result.message}</div>`;
+                document.getElementById('identifyResult').classList.remove('hidden');
+                showRegister();
+            }
+        }
+
+        function showRegister() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            log('📝 Registration form');
+        }
+
+        function showIdentify() {
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        }
+
+        function register() {
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const plate = document.getElementById('regPlate').value.trim().toUpperCase();
+            const make = document.getElementById('regMake').value.trim();
+            const model = document.getElementById('regModel').value.trim();
+            if (!name || !phone || !plate) { log('⚠️ Please fill all fields', 'error'); return; }
+            const result = registerVisitor({ name, phone, plate, make, model });
+            if (result.credential) {
+                saveCredential(result.credential);
+                document.getElementById('registerResult').innerHTML = `<div class="result">✅ Registered: ${result.credential.name}</div>`;
+                document.getElementById('registerResult').classList.remove('hidden');
+                setTimeout(() => startSessionFlow(), 500);
+            }
+        }
+
+        function startSessionFlow() {
+            const result = startSession();
+            if (result.error) { log('❌ ' + result.error, 'error'); return; }
+            saveSession(result.session);
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.remove('hidden');
+            document.getElementById('sessionInfo').innerHTML = `
+                <div class="result">
+                    <div><span class="badge active">Active</span> ${result.credential.getVehicleDisplay()}</div>
+                    <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px;">${result.credential.name || 'Visitor'} • ${result.accessPoint?.name || 'Gate'}</div>
+                    <div style="margin-top:8px;padding:8px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:12px;text-align:center;">
+                        Exit QR: <span style="color:#00FF88;font-weight:600;">${result.exitQR}</span>
+                    </div>
+                </div>
+            `;
+            log('📤 Exit QR generated');
+        }
+
+        function endVisit() {
+            const s = getState();
+            if (!s.session) { log('❌ No active session', 'error'); return; }
+            const result = endSession(s.session.sessionToken);
+            if (result.error) { log('❌ ' + result.error, 'error'); return; }
+            document.getElementById('step4').classList.add('hidden');
+            document.getElementById('step5').classList.remove('hidden');
+            document.getElementById('completeInfo').innerHTML = `
+                <div class="result">
+                    <div style="text-align:center;font-size:48px;margin:8px 0;">🎉</div>
+                    <div style="text-align:center;font-weight:600;font-size:18px;">${result.duration}</div>
+                    <div style="text-align:center;color:rgba(255,255,255,0.5);margin-top:4px;"><span class="badge completed">Completed</span></div>
+                </div>
+            `;
+            log('✅ Visit complete: ' + result.duration);
+        }
+
+        function resetAll() {
+            resetState();
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step4').classList.add('hidden');
+            document.getElementById('step5').classList.add('hidden');
+            document.getElementById('scanResult').classList.add('hidden');
+            document.getElementById('identifyResult').classList.add('hidden');
+            document.getElementById('registerResult').classList.add('hidden');
+            document.getElementById('identifier').value = 'KDG 832A';
+            log('🔄 Ready for new visit');
+        }
+
+        // Expose functions globally
+        window.scanMockQR = scanMockQR;
+        window.identify = identify;
+        window.showRegister = showRegister;
+        window.showIdentify = showIdentify;
+        window.register = register;
+        window.endVisit = endVisit;
+        window.resetAll = resetAll;
+
+        log('🚀 Scanner test loaded');
+        log('📋 Click "Scan Mock QR" to start');
+    </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  name           String
+  organizationId String
+  roles          String[]
+  permissions    String[]
+  status         String   @default("active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Organization model
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  type        String
+  settings    Json
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Audit Log model
+model AuditLog {
+  id          String   @id @default(cuid())
+  organizationId String
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  result       String
+  details      Json
+  ip           String?
+  userAgent    String?
+  timestamp    DateTime @default(now())
+}

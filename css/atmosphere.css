@@ -1,0 +1,226 @@
+/* ==========================================
+   ATMOSPHERE - Access Atmosphere™
+   ========================================== */
+
+/* Sky Layer */
+.atmosphere-sky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    transition: background 2s ease;
+    pointer-events: none;
+}
+
+/* Canvas Layer */
+.atmosphere-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Effects Layer */
+.atmosphere-effects {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Scanner Pulse */
+.scanner-pulse {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 2px;
+    z-index: 1;
+    animation: scannerPulse 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes scannerPulse {
+    0% { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+    50% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+    100% { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+}
+
+/* Ripples */
+.ripple {
+    position: fixed;
+    border: 2px solid rgba(108, 60, 225, 0.2);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    animation: rippleExpand 1.5s ease-out forwards;
+}
+
+@keyframes rippleExpand {
+    0% { width: 20px; height: 20px; opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    100% { width: 300px; height: 300px; opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Flash Effects */
+@keyframes flashFade {
+    0% { opacity: 0.08; }
+    100% { opacity: 0; }
+}
+
+.flash-entry {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #00FF88;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+    animation: flashFade 0.5s ease-out forwards;
+}
+
+.flash-exit {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #FF6B35;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+    animation: flashFade 0.5s ease-out forwards;
+}
+/* ==========================================
+   ATMOSPHERE - Complete Styles
+   ========================================== */
+
+/* Sky */
+.atmosphere-sky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: background 2s ease, opacity 2s ease, filter 2s ease;
+}
+
+/* Traffic Canvas */
+.traffic-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Cityscape Canvas */
+.cityscape-canvas {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+}
+
+/* Rain Effect */
+.rain-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+/* Scanner Pulse */
+.scanner-pulse {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 2px;
+    z-index: 1;
+    background: linear-gradient(90deg, transparent, rgba(108, 60, 225, 0.15), transparent);
+    animation: scannerPulse 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes scannerPulse {
+    0% { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+    50% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+    100% { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+}
+
+/* Ripples */
+.ripple {
+    position: fixed;
+    border: 2px solid rgba(108, 60, 225, 0.2);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    animation: rippleExpand 1.5s ease-out forwards;
+}
+
+@keyframes rippleExpand {
+    0% { width: 20px; height: 20px; opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    100% { width: 300px; height: 300px; opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Flash Effects */
+@keyframes flashFade {
+    0% { opacity: 0.08; }
+    100% { opacity: 0; }
+}
+
+.flash-entry {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #00FF88;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+    animation: flashFade 0.5s ease-out forwards;
+}
+
+.flash-exit {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #FF6B35;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 1;
+    animation: flashFade 0.5s ease-out forwards;
+}
+
+/* Dashboard above atmosphere */
+#app, #dashboard, .dashboard {
+    position: relative;
+    z-index: 1;
+}

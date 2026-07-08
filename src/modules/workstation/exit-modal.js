@@ -6,6 +6,7 @@ import { createModal, closeModal, isExitModalOpen, setExitModalOpen } from './mo
 import { showToast } from './toast.js';
 import { refreshData, decrementTodayCount } from './stats.js';
 import { processExit } from '../../services/api-client.js';
+import eventBus from '../../core/events.js';
 
 // ==========================================
 // Validation
@@ -111,13 +112,15 @@ async function handleExitSubmit() {
             }
         );
 
-        if (result.success) {
+        if (result && result.success) {
             decrementTodayCount();
             closeModal('exitModal');
             showToast(`✅ ${validPlate} exited successfully!`, 'success');
             await refreshData();
+            // Emit event for atmosphere
+            eventBus.emit('session:ended', { sessionId: result.sessionId, vehicle: validPlate });
         } else {
-            throw new Error(result.error || 'Exit failed');
+            throw new Error(result?.error || 'Exit failed');
         }
 
     } catch (error) {

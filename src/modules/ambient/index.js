@@ -3,12 +3,16 @@
 // ==========================================
 
 import digitalTwin from './digital-twin/index.js';
+import weatherEngine from './weather.js';
+import vehicleManager from './digital-twin/vehicles/VehicleManager.js';
 
 class AmbientEngine {
     constructor() {
         this.isRunning = false;
         this.container = null;
         this.digitalTwin = digitalTwin;
+        this.weatherEngine = weatherEngine;
+        this.vehicleManager = vehicleManager;
         this.skyColors = {
             dawn: ['#2c1b4d', '#6b3fa0', '#e8a87c'],
             morning: ['#4a90d9', '#87CEEB', '#f0e6d3'],
@@ -28,28 +32,33 @@ class AmbientEngine {
         this.container = container || document.body;
         console.log('🌅 Ambient Engine initializing...');
         
-        // Remove old styles
         const oldStyle = document.getElementById('ambient-styles');
         if (oldStyle) oldStyle.remove();
         
-        // 1. Setup background
         this.setupBackground();
-        console.log('🎨 Background ready');
-        
-        // 2. Create particles
         this.createParticles();
-        console.log('✨ Particles ready');
-        
-        // 3. Create canvases (BEFORE Digital Twin)
         this.createCanvases();
-        console.log('🖼️ Canvas Manager ready');
-        
-        // 4. Initialize Digital Twin (NOW canvases exist)
         this.initDigitalTwin();
         
-        // 5. Start auto-updates
-        this.start();
+        // Initialize vehicle manager on traffic canvas
+        setTimeout(() => {
+            const trafficCanvas = document.getElementById('traffic-canvas');
+            if (trafficCanvas && this.vehicleManager) {
+                this.vehicleManager.init(trafficCanvas);
+                console.log('🚗 Vehicle manager started');
+            }
+        }, 1000);
         
+        // Initialize weather on cityscape canvas
+        setTimeout(() => {
+            const cityCanvas = document.getElementById('cityscape-canvas');
+            if (cityCanvas && this.weatherEngine) {
+                this.weatherEngine.init(cityCanvas);
+                console.log('🌤️ Weather engine started');
+            }
+        }, 1000);
+        
+        this.start();
         console.log('🌅 Ambient Engine initialized with theme:', this.currentTheme);
     }
 
@@ -102,8 +111,8 @@ class AmbientEngine {
         style.id = 'ambient-styles';
         style.textContent = `
             body {
-                background: #0a0a1a !important;
-                transition: background 2s ease !important;
+                background: #0a0a1a;
+                transition: background 2s ease;
                 min-height: 100vh;
                 position: relative;
                 margin: 0;
@@ -278,11 +287,15 @@ class AmbientEngine {
 
 const ambientEngine = new AmbientEngine();
 
-// No auto-init - bootstrap.js is the orchestrator
-
 if (typeof window !== 'undefined') {
     window.__ambient = ambientEngine;
+    window.__ambient.digitalTwin = ambientEngine.digitalTwin;
+    window.__ambient.weatherEngine = ambientEngine.weatherEngine;
+    window.__ambient.vehicleManager = ambientEngine.vehicleManager;
     console.log('🌅 Ambient Engine exposed as window.__ambient');
+    console.log('🏗️ Digital Twin exposed as window.__ambient.digitalTwin');
+    console.log('🌤️ Weather Engine exposed as window.__ambient.weatherEngine');
+    console.log('🚗 Vehicle Manager exposed as window.__ambient.vehicleManager');
 }
 
 export default ambientEngine;

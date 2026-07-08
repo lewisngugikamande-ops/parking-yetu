@@ -1,0 +1,773 @@
+console.log('🔥 LOADED AccessEngine.js from:', __filename);
+
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const { Logger, CorrelationId, MetricsCollector, HealthChecks } = require('@access-engine/observability');
+const { RepositoryProvider } = require('@access-engine/infrastructure');
+const { AccessEngine } = require('@access-engine/engine');
+const { EventBus } = require('@access-engine/kernel');
+const { Identity, Credential, Membership, Policy, Session } = require('@access-engine/engine');
+const { printBanner } = require('./banner');
+
+// Auth middleware
+const {
+  getAuthProvider,
+  createAuthMiddleware,
+  createAuthorizationMiddleware,
+  requireAuth,
+} = require('./middleware/auth');
+
+const logger = new Logger({ service: 'access-api' });
+const metrics = new MetricsCollector();
+
+const repositories = RepositoryProvider.getProvider();
+
+// Get auth provider from registry
+const { resolver: authResolver } = getAuthProvider();
+const { MockPermissionResolver } = require('@access-engine/infrastructure');
+const permissionResolver = new MockPermissionResolver();
+
+logger.info('Repository provider initialized', { provider: process.env.REPOSITORY_PROVIDER || 'memory' });
+logger.info('Auth provider initialized', { provider: process.env.AUTH_PROVIDER || 'mock' });
+
+const eventBus = new EventBus();
+
+async function seedData() {
+  logger.info('Seeding test data...');
+  const existing = await repositories.credential.findByValue('TEST-QR-123');
+  if (existing) { logger.info('Seed data already exists'); return; }
+  
+  const identity = Identity.create({ name: 'Test User', email: 'test@example.com' });
+  await repositories.identity.save(identity);
+  logger.info('Identity created', { identityId: identity.id });
+  
+  const credential = Credential.create({ identityId: identity.id, type: 'qr', value: 'TEST-QR-123' });
+  await repositories.credential.save(credential);
+  logger.info('Credential created', { credentialId: credential.id });
+  
+  const membership = Membership.create({ identityId: identity.id, organizationId: 'test-org', roles: ['member'] });
+  await repositories.membership.save(membership);
+  logger.info('Membership created', { membershipId: membership.id });
+  
+  const policy = Policy.create({ 
+    name: 'Member Access', 
+    organizationId: 'test-org', 
+    rules: [{ 
+      condition: { field: 'membership.roles', operator: 'contains', value: 'member' }, 
+      effect: 'allow' 
+    }] 
+  });
+  await repositories.policy.save(policy);
+  logger.info('Policy created', { policyId: policy.id });
+  
+  logger.info('Seed complete! Test with: TEST-QR-123');
+}
+
+const engine = AccessEngine.builder()
+  .withIdentityRepository(repositories.identity)
+  .withCredentialRepository(repositories.credential)
+  .withMembershipRepository(repositories.membership)
+  .withPolicyRepository(repositories.policy)
+  .withSessionRepository(repositories.session)
+  .withEventBus(eventBus)
+  .build();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const health = new HealthChecks({ serviceName: 'access-api' });
+health.register('engine', async () => ({ status: 'healthy' }));
+health.register('auth', async () => {
+  try {
+    return { status: 'healthy' };
+  } catch (error) {
+    return { status: 'unhealthy', message: error.message };
+  }
+});
+
+// CORS configuration - allow all origins for development
+app.use(cors({
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  const correlationId = CorrelationId.generate();
+  req.correlationId = correlationId;
+  res.setHeader('X-Correlation-ID', correlationId);
+  req.logger = logger.child({ correlationId });
+  next();
+});
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  metrics.increment('http.requests');
+  res.on('finish', () => { metrics.histogram('http.duration', Date.now() - start); });
+  next();
+});
+
+// Authentication & Authorization middleware
+app.use(createAuthMiddleware(authResolver));
+app.use(createAuthorizationMiddleware(permissionResolver));
+
+// Health endpoints (public)
+app.get('/health', async (req, res) => {
+  const result = await health.check();
+  res.json(result);
+});
+
+app.get('/health/ready', (req, res) => {
+  res.json({ status: 'ready' });
+});
+
+app.get('/health/live', (req, res) => {
+  res.json({ status: 'alive' });
+});
+
+app.get('/metrics', (req, res) => {
+  res.json(metrics.getMetrics());
+});
+
+// Login endpoint
+// GET /auth/me - Get current user
+app.get('/auth/me', requireAuth, async (req, res) => {
+  try {
+    const principal = req.principal;
+    if (!principal) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+    
+    // Get the full identity from the repository
+    const identity = await repositories.identity.findById(principal.subject);
+    
+    res.json({
+      success: true,
+      principal: principal.toJSON ? principal.toJSON() : principal,
+      user: identity ? identity.toJSON() : null
+    });
+  } catch (error) {
+    console.error('Error in /auth/me:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// POST /auth/logout - Logout user
+app.post('/auth/logout', requireAuth, async (req, res) => {
+  try {
+    // In mock auth, we just return success
+    // With real auth, you'd invalidate the token
+    res.json({
+      success: true,
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    console.error('Error in /auth/logout:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const { issuer } = getAuthProvider();
+    const result = await issuer.issue({ username, password });
+    
+    if (!result) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials',
+        decision: 'deny'
+      });
+    }
+
+// Add this after the login endpoint
+app.get('/auth/me', requireAuth, async (req, res) => {
+  try {
+    // Return the current user info from the principal
+    const principal = req.principal;
+    if (!principal) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+    
+    // Get the user details from the identity repository
+    const identity = await repositories.identity.findById(principal.subject);
+    
+    res.json({
+      success: true,
+      principal: principal.toJSON ? principal.toJSON() : principal,
+      user: identity ? identity.toJSON() : null
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add this after the /auth/me endpoint
+app.post('/auth/logout', requireAuth, async (req, res) => {
+  try {
+    // In mock auth, just return success
+    // With real auth, you'd invalidate the token
+    res.json({
+      success: true,
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+ 
+    res.json({
+      success: true,
+      token: result.token,
+      principal: result.principal.toJSON(),
+      message: 'Login successful'
+    });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      error: error.message,
+      decision: 'deny'
+    });
+  }
+});
+
+// Protected entry endpoint
+app.post('/api/entry', requireAuth, async (req, res) => {
+  const start = Date.now();
+  const { logger } = req;
+  
+  try {
+    logger.info('Entry request received', { body: req.body });
+    metrics.increment('api.entry.requests');
+    
+    const { credential, accessPointId, organizationId, metadata } = req.body;
+    
+    const tenantId = req.authContext?.tenantId || organizationId || 'test-org';
+    
+    const result = await engine.process({
+      credential: { value: credential },
+      accessPointId: accessPointId || 'gate-a',
+      action: 'enter',
+      organizationId: tenantId,
+      metadata: {
+        ...metadata,
+        actor: req.principal?.subject,
+        authenticatedAt: req.principal?.authenticatedAt
+      }
+    });
+    
+    const duration = Date.now() - start;
+    metrics.histogram('api.entry.duration', duration);
+    
+    if (result.success) {
+      metrics.increment('api.entry.success');
+      logger.info('Entry successful', { sessionId: result.sessionId, duration });
+    } else {
+      metrics.increment('api.entry.failure');
+      logger.warn('Entry denied', { error: result.error, duration });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    const duration = Date.now() - start;
+    metrics.increment('api.entry.error');
+    logger.error('Entry error', { error: error.message, duration });
+    res.status(400).json({
+      success: false,
+      error: error.message,
+      decision: 'deny'
+    });
+  }
+});
+
+app.post('/api/exit', requireAuth, async (req, res) => {
+  const start = Date.now();
+  const { logger } = req;
+  
+  try {
+    logger.info('Exit request received', { body: req.body });
+    metrics.increment('api.exit.requests');
+    
+    const { credential, accessPointId, organizationId, metadata } = req.body;
+    
+    const tenantId = req.authContext?.tenantId || organizationId || 'test-org';
+    
+    const result = await engine.process({
+      credential: { value: credential },
+      accessPointId: accessPointId || 'gate-a',
+      action: 'exit',
+      organizationId: tenantId,
+      metadata: {
+        ...metadata,
+        actor: req.principal?.subject,
+        authenticatedAt: req.principal?.authenticatedAt
+      }
+    });
+    
+    const duration = Date.now() - start;
+    metrics.histogram('api.exit.duration', duration);
+    
+    if (result.success) {
+      metrics.increment('api.exit.success');
+      logger.info('Exit successful', { sessionId: result.sessionId, duration });
+    } else {
+      metrics.increment('api.exit.failure');
+      logger.warn('Exit denied', { error: result.error, duration });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    const duration = Date.now() - start;
+    metrics.increment('api.exit.error');
+    logger.error('Exit error', { error: error.message, duration });
+    res.status(400).json({
+      success: false,
+      error: error.message,
+      decision: 'deny'
+    });
+  }
+});
+
+app.get('/api/dashboard', requireAuth, async (req, res) => {
+  const { logger } = req;
+  logger.info('Dashboard request');
+  res.json({
+    totalSessions: 0,
+    activeSessions: 0,
+    totalIdentities: 1,
+    timestamp: new Date().toISOString()
+  });
+});
+
+seedData().then(() => {
+  app.listen(PORT, () => {
+    const config = {
+      port: PORT,
+      repositoryProvider: process.env.REPOSITORY_PROVIDER || 'memory',
+      authProvider: process.env.AUTH_PROVIDER || 'mock',
+      firestoreEmulator: process.env.FIRESTORE_EMULATOR_HOST || 'not configured',
+      metricsPort: process.env.METRICS_PORT || null,
+    };
+    printBanner(config);
+  });
+}).catch(err => {
+  logger.error('Seed error:', { error: err.message });
+  process.exit(1);
+});
+
+module.exports = app;
+
+// Dashboard endpoint
+app.get('/api/dashboard', requireAuth, async (req, res) => {
+  try {
+    const { logger } = req;
+    const organizationId = req.authContext?.tenantId || 'test-org';
+    
+    // Get active sessions count
+    const activeSessions = await repositories.session.findActiveByOrganization(organizationId);
+    
+    // Get today's entries
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const allSessions = await repositories.session.findByOrganization(organizationId);
+    const todayEntries = allSessions.filter(s => 
+      s.entryTime && new Date(s.entryTime) >= today
+    );
+    
+    // Get today's exits
+    const todayExits = allSessions.filter(s => 
+      s.exitTime && new Date(s.exitTime) >= today
+    );
+    
+    // Get recent activity (last 10)
+    const recentActivity = allSessions
+      .sort((a, b) => (b.entryTime || 0) - (a.entryTime || 0))
+      .slice(0, 10)
+      .map(s => ({
+        plate: s.vehiclePlate || 'Unknown',
+        type: s.exitTime ? 'exit' : 'entry',
+        time: s.exitTime ? new Date(s.exitTime).toLocaleTimeString() : new Date(s.entryTime).toLocaleTimeString()
+      }));
+    
+    res.json({
+      activeSessions: activeSessions.length,
+      todayEntries: todayEntries.length,
+      todayExits: todayExits.length,
+      recentActivity: recentActivity,
+      alerts: [] // Will be implemented later
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// Member Dashboard Endpoints
+// ============================================
+
+// Get member's current visit (active session for this identity)
+app.get('/api/member/current-visit', requireAuth, async (req, res) => {
+  try {
+    const identityId = req.principal?.subject;
+    if (!identityId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Find active session for this identity
+    const allSessions = await repositories.session.findByOrganization('test-org');
+    const activeSession = allSessions.find(s => 
+      s.identityId === identityId && s.status === 'active'
+    );
+    
+    if (!activeSession) {
+      return res.json({ hasActiveVisit: false });
+    }
+    
+    res.json({
+      hasActiveVisit: true,
+      session: {
+        id: activeSession.id,
+        vehiclePlate: activeSession.vehiclePlate || 'Unknown',
+        entryTime: activeSession.entryTime,
+        duration: activeSession.entryTime ? Math.floor((Date.now() - new Date(activeSession.entryTime).getTime()) / 60000) : 0
+      }
+    });
+  } catch (error) {
+    console.error('Current visit error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get member's visit history
+app.get('/api/member/history', requireAuth, async (req, res) => {
+  try {
+    const identityId = req.principal?.subject;
+    if (!identityId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const allSessions = await repositories.session.findByOrganization('test-org');
+    const history = allSessions
+      .filter(s => s.identityId === identityId && s.status === 'completed')
+      .sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime))
+      .slice(0, 10)
+      .map(s => ({
+        id: s.id,
+        vehiclePlate: s.vehiclePlate || 'Unknown',
+        entryTime: s.entryTime,
+        exitTime: s.exitTime,
+        duration: s.entryTime && s.exitTime ? 
+          Math.floor((new Date(s.exitTime) - new Date(s.entryTime)) / 60000) : 0
+      }));
+    
+    res.json({ history });
+  } catch (error) {
+    console.error('History error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get member's vehicles
+app.get('/api/member/vehicles', requireAuth, async (req, res) => {
+  try {
+    const identityId = req.principal?.subject;
+    if (!identityId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Get all credentials for this identity
+    const credentials = await repositories.credential.findByIdentityId(identityId);
+    
+    // Get all sessions to find vehicles used by this identity
+    const allSessions = await repositories.session.findByOrganization('test-org');
+    const vehiclePlates = allSessions
+      .filter(s => s.identityId === identityId && s.vehiclePlate)
+      .map(s => s.vehiclePlate)
+      .filter((v, i, a) => a.indexOf(v) === i); // Unique plates
+    
+    // For now, return the unique plates from sessions
+    const vehicles = vehiclePlates.map(plate => ({
+      plate: plate,
+      type: 'Unknown',
+      isActive: allSessions.some(s => s.vehiclePlate === plate && s.status === 'active')
+    }));
+    
+    res.json({ vehicles });
+  } catch (error) {
+    console.error('Vehicles error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// Member Dashboard Endpoints - FIXED
+// ============================================
+
+// Get member's current visit
+app.get('/api/member/current-visit', requireAuth, async (req, res) => {
+  try {
+    const identityId = req.principal?.subject;
+    if (!identityId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Get all sessions from the repository
+    const allSessions = await repositories.session.findAll();
+    
+    // Find active session for this identity
+    const activeSession = allSessions?.find(s => 
+      s.identityId === identityId && s.status === 'active'
+    );
+    
+    if (!activeSession) {
+      return res.json({ hasActiveVisit: false });
+    }
+    
+    res.json({
+      hasActiveVisit: true,
+      session: {
+        id: activeSession.id,
+        vehiclePlate: activeSession.vehiclePlate || 'Unknown',
+        entryTime: activeSession.entryTime,
+        duration: activeSession.entryTime ? Math.floor((Date.now() - new Date(activeSession.entryTime).getTime()) / 60000) : 0
+      }
+    });
+  } catch (error) {
+    console.error('Current visit error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get member's visit history
+app.get('/api/member/history', requireAuth, async (req, res) => {
+  try {
+    const identityId = req.principal?.subject;
+    if (!identityId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const allSessions = await repositories.session.findAll();
+    const history = (allSessions || [])
+      .filter(s => s.identityId === identityId && s.status === 'completed')
+      .sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime))
+      .slice(0, 10)
+      .map(s => ({
+        id: s.id,
+        vehiclePlate: s.vehiclePlate || 'Unknown',
+        entryTime: s.entryTime,
+        exitTime: s.exitTime,
+        duration: s.entryTime && s.exitTime ? 
+          Math.floor((new Date(s.exitTime) - new Date(s.entryTime)) / 60000) : 0
+      }));
+    
+    res.json({ history });
+  } catch (error) {
+    console.error('History error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get member's vehicles
+app.get('/api/member/vehicles', requireAuth, async (req, res) => {
+  try {
+    const identityId = req.principal?.subject;
+    if (!identityId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Get all sessions for this identity
+    const allSessions = await repositories.session.findAll();
+    const identitySessions = (allSessions || []).filter(s => s.identityId === identityId);
+    
+    // Get unique vehicle plates
+    const vehiclePlates = identitySessions
+      .filter(s => s.vehiclePlate)
+      .map(s => s.vehiclePlate)
+      .filter((v, i, a) => a.indexOf(v) === i);
+    
+    const vehicles = vehiclePlates.map(plate => ({
+      plate: plate,
+      type: 'Unknown',
+      isActive: identitySessions.some(s => s.vehiclePlate === plate && s.status === 'active')
+    }));
+    
+    res.json({ vehicles });
+  } catch (error) {
+    console.error('Vehicles error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Dashboard endpoint - FIXED
+app.get('/api/dashboard', requireAuth, async (req, res) => {
+  try {
+    const { logger } = req;
+    const organizationId = req.authContext?.tenantId || 'test-org';
+    
+    // Get all sessions
+    const allSessions = await repositories.session.findAll();
+    
+    // Filter by organization if needed
+    const orgSessions = (allSessions || []).filter(s => 
+      s.organizationId === organizationId
+    );
+    
+    // Active sessions
+    const activeSessions = orgSessions.filter(s => s.status === 'active');
+    
+    // Today's entries
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayEntries = orgSessions.filter(s => 
+      s.entryTime && new Date(s.entryTime) >= today
+    );
+    
+    // Today's exits
+    const todayExits = orgSessions.filter(s => 
+      s.exitTime && new Date(s.exitTime) >= today
+    );
+    
+    // Recent activity (last 10)
+    const recentActivity = (orgSessions || [])
+      .sort((a, b) => (b.entryTime || 0) - (a.entryTime || 0))
+      .slice(0, 10)
+      .map(s => ({
+        plate: s.vehiclePlate || 'Unknown',
+        type: s.exitTime ? 'exit' : 'entry',
+        time: s.exitTime ? new Date(s.exitTime).toLocaleTimeString() : new Date(s.entryTime).toLocaleTimeString()
+      }));
+    
+    res.json({
+      activeSessions: activeSessions.length,
+      todayEntries: todayEntries.length,
+      todayExits: todayExits.length,
+      recentActivity: recentActivity,
+      alerts: []
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// MEMBER DASHBOARD - SIMPLIFIED
+// ============================================
+
+app.get('/api/member/current-visit', requireAuth, async (req, res) => {
+  try {
+    // Return no active visit for now
+    res.json({ hasActiveVisit: false });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/member/history', requireAuth, async (req, res) => {
+  try {
+    res.json({ history: [] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/member/vehicles', requireAuth, async (req, res) => {
+  try {
+    res.json({ vehicles: [] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// MEMBER DASHBOARD - SIMPLIFIED
+// ============================================
+
+app.get('/api/member/current-visit', requireAuth, async (req, res) => {
+  try {
+    // Return no active visit for now
+    res.json({ hasActiveVisit: false });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/member/history', requireAuth, async (req, res) => {
+  try {
+    res.json({ history: [] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/member/vehicles', requireAuth, async (req, res) => {
+  try {
+    res.json({ vehicles: [] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// MEMBER DASHBOARD - SIMPLIFIED (NO REPOSITORY)
+// ============================================
+
+app.get('/api/member/current-visit', requireAuth, async (req, res) => {
+  try {
+    // Return no active visit for now
+    res.json({ hasActiveVisit: false });
+  } catch (error) {
+    console.error('Current visit error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/member/history', requireAuth, async (req, res) => {
+  try {
+    res.json({ history: [] });
+  } catch (error) {
+    console.error('History error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/member/vehicles', requireAuth, async (req, res) => {
+  try {
+    res.json({ vehicles: [] });
+  } catch (error) {
+    console.error('Vehicles error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});

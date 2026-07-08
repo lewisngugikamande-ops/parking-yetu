@@ -3,24 +3,31 @@
 // ==========================================
 
 import { Application } from '../../core/application/Application.js';
-import { initQRGenerator } from './qr-generator.js';
 
 class AdminApp extends Application {
     constructor() {
         super({
             id: 'admin',
             name: 'QR Generator',
-            version: '1.0.0',
-            description: 'Generate QR codes for gates'
+            version: '1.0.0'
         });
     }
-
+    
     onMount() {
         console.log('🔧 Admin app mounting...');
-        initQRGenerator(this.container);
-        console.log('✅ Admin app ready');
+        this.render(`
+            <div style="max-width:600px;margin:40px auto;padding:20px;text-align:center;">
+                <div style="font-size:48px;margin-bottom:12px;">🔧</div>
+                <h1 style="font-size:24px;font-weight:700;">QR Generator</h1>
+                <p style="color:var(--text-muted);">Generate QR codes for gates</p>
+                <div class="glass" style="padding:20px;margin-top:20px;">
+                    <p style="color:var(--text-muted);">🚧 Under Construction</p>
+                    <p style="font-size:12px;color:var(--text-muted);">QR generation coming soon</p>
+                </div>
+            </div>
+        `);
     }
-
+    
     onUnmount() {
         console.log('🔧 Admin app unmounting...');
     }
@@ -28,9 +35,11 @@ class AdminApp extends Application {
 
 const adminApp = new AdminApp();
 
-export function initAdminApp(container) {
+// Default export
+export default function initAdminApp(container) {
     adminApp.mount(container);
     return adminApp;
 }
 
-export default { initAdminApp, app: adminApp };
+// Named export (for router compatibility)
+export { initAdminApp };

@@ -36,6 +36,20 @@ logger.info('Auth provider initialized', { provider: process.env.AUTH_PROVIDER |
 
 const eventBus = new EventBus();
 
+// Build the Access Engine
+const engine = new AccessEngine({
+  identityRepository: repositories.identity,
+  credentialRepository: repositories.credential,
+  membershipRepository: repositories.membership,
+  policyRepository: repositories.policy,
+  sessionRepository: repositories.session,
+  eventBus: eventBus
+});
+
+// ============================================
+// SEED DATA
+// ============================================
+
 async function seedData() {
   logger.info('Seeding test data...');
   const existing = await repositories.credential.findByValue('TEST-QR-123');
@@ -56,10 +70,7 @@ async function seedData() {
   const policy = Policy.create({ 
     name: 'Member Access', 
     organizationId: 'test-org', 
-    rules: [{ 
-      condition: { field: 'membership.roles', operator: 'contains', value: 'member' }, 
-      effect: 'allow' 
-    }] 
+    rules: [{ effect: 'allow', actions: ['*'], resources: ['*'] }]
   });
   await repositories.policy.save(policy);
   logger.info('Policy created', { policyId: policy.id });
@@ -67,121 +78,62 @@ async function seedData() {
   logger.info('Seed complete! Test with: TEST-QR-123');
 }
 
-const engine = AccessEngine.builder()
-  .withIdentityRepository(repositories.identity)
-  .withCredentialRepository(repositories.credential)
-  .withMembershipRepository(repositories.membership)
-  .withPolicyRepository(repositories.policy)
-  .withSessionRepository(repositories.session)
-  .withEventBus(eventBus)
-  .build();
+// ============================================
+// EXPRESS APP
+// ============================================
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const health = new HealthChecks({ serviceName: 'access-api' });
-health.register('engine', async () => ({ status: 'healthy' }));
-health.register('auth', async () => {
-  try {
-    return { status: 'healthy' };
-  } catch (error) {
-    return { status: 'unhealthy', message: error.message };
-  }
-});
-
-// CORS configuration - allow all origins for development
-app.use(cors({
+// CORS - Allow all origins with credentials
+const corsOptions = {
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Correlation ID middleware
 app.use((req, res, next) => {
   const correlationId = CorrelationId.generate();
   req.correlationId = correlationId;
   res.setHeader('X-Correlation-ID', correlationId);
-  req.logger = logger.child({ correlationId });
+  const childLogger = logger.child({ correlationId });
+  req.logger = childLogger;
   next();
 });
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  metrics.increment('http.requests');
-  res.on('finish', () => { metrics.histogram('http.duration', Date.now() - start); });
-  next();
-});
-
-// Authentication & Authorization middleware
+// Auth middleware
 app.use(createAuthMiddleware(authResolver));
 app.use(createAuthorizationMiddleware(permissionResolver));
 
-// Health endpoints (public)
+// ============================================
+// HEALTH ENDPOINTS
+// ============================================
+
 app.get('/health', async (req, res) => {
-  const result = await health.check();
-  res.json(result);
+  const health = new HealthChecks();
+  health.addCheck('engine', async () => ({ status: 'healthy' }));
+  health.addCheck('auth', async () => ({ status: 'healthy' }));
+  const status = await health.check();
+  res.json({ service: 'access-api', status: 'healthy', timestamp: new Date().toISOString(), checks: status });
 });
 
-app.get('/health/ready', (req, res) => {
-  res.json({ status: 'ready' });
-});
+app.get('/health/ready', (req, res) => res.json({ status: 'ready' }));
+app.get('/health/live', (req, res) => res.json({ status: 'alive' }));
+app.get('/metrics', (req, res) => res.json({}));
 
-app.get('/health/live', (req, res) => {
-  res.json({ status: 'alive' });
-});
+// ============================================
+// AUTH ENDPOINTS
+// ============================================
 
-app.get('/metrics', (req, res) => {
-  res.json(metrics.getMetrics());
-});
-
-// Login endpoint
-// GET /auth/me - Get current user
-app.get('/auth/me', requireAuth, async (req, res) => {
-  try {
-    const principal = req.principal;
-    if (!principal) {
-      return res.status(401).json({
-        success: false,
-        error: 'Not authenticated'
-      });
-    }
-    
-    // Get the full identity from the repository
-    const identity = await repositories.identity.findById(principal.subject);
-    
-    res.json({
-      success: true,
-      principal: principal.toJSON ? principal.toJSON() : principal,
-      user: identity ? identity.toJSON() : null
-    });
-  } catch (error) {
-    console.error('Error in /auth/me:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// POST /auth/logout - Logout user
-app.post('/auth/logout', requireAuth, async (req, res) => {
-  try {
-    // In mock auth, we just return success
-    // With real auth, you'd invalidate the token
-    res.json({
-      success: true,
-      message: 'Logout successful'
-    });
-  } catch (error) {
-    console.error('Error in /auth/logout:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
 app.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -189,58 +141,9 @@ app.post('/auth/login', async (req, res) => {
     const result = await issuer.issue({ username, password });
     
     if (!result) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid credentials',
-        decision: 'deny'
-      });
-    }
-
-// Add this after the login endpoint
-app.get('/auth/me', requireAuth, async (req, res) => {
-  try {
-    // Return the current user info from the principal
-    const principal = req.principal;
-    if (!principal) {
-      return res.status(401).json({
-        success: false,
-        error: 'Not authenticated'
-      });
+      return res.status(401).json({ success: false, error: 'Invalid credentials', decision: 'deny' });
     }
     
-    // Get the user details from the identity repository
-    const identity = await repositories.identity.findById(principal.subject);
-    
-    res.json({
-      success: true,
-      principal: principal.toJSON ? principal.toJSON() : principal,
-      user: identity ? identity.toJSON() : null
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
-
-// Add this after the /auth/me endpoint
-app.post('/auth/logout', requireAuth, async (req, res) => {
-  try {
-    // In mock auth, just return success
-    // With real auth, you'd invalidate the token
-    res.json({
-      success: true,
-      message: 'Logout successful'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-});
- 
     res.json({
       success: true,
       token: result.token,
@@ -248,15 +151,30 @@ app.post('/auth/logout', requireAuth, async (req, res) => {
       message: 'Login successful'
     });
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: error.message,
-      decision: 'deny'
-    });
+    res.status(401).json({ success: false, error: error.message, decision: 'deny' });
   }
 });
 
-// Protected entry endpoint
+app.get('/auth/me', requireAuth, async (req, res) => {
+  try {
+    const principal = req.principal;
+    if (!principal) {
+      return res.status(401).json({ success: false, error: 'Not authenticated' });
+    }
+    res.json({ success: true, principal: principal.toJSON ? principal.toJSON() : principal });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/auth/logout', requireAuth, async (req, res) => {
+  res.json({ success: true, message: 'Logout successful' });
+});
+
+// ============================================
+// PARKING ENDPOINTS
+// ============================================
+
 app.post('/api/entry', requireAuth, async (req, res) => {
   const start = Date.now();
   const { logger } = req;
@@ -266,7 +184,6 @@ app.post('/api/entry', requireAuth, async (req, res) => {
     metrics.increment('api.entry.requests');
     
     const { credential, accessPointId, organizationId, metadata } = req.body;
-    
     const tenantId = req.authContext?.tenantId || organizationId || 'test-org';
     
     const result = await engine.process({
@@ -297,11 +214,7 @@ app.post('/api/entry', requireAuth, async (req, res) => {
     const duration = Date.now() - start;
     metrics.increment('api.entry.error');
     logger.error('Entry error', { error: error.message, duration });
-    res.status(400).json({
-      success: false,
-      error: error.message,
-      decision: 'deny'
-    });
+    res.status(400).json({ success: false, error: error.message, decision: 'deny' });
   }
 });
 
@@ -314,7 +227,6 @@ app.post('/api/exit', requireAuth, async (req, res) => {
     metrics.increment('api.exit.requests');
     
     const { credential, accessPointId, organizationId, metadata } = req.body;
-    
     const tenantId = req.authContext?.tenantId || organizationId || 'test-org';
     
     const result = await engine.process({
@@ -345,24 +257,13 @@ app.post('/api/exit', requireAuth, async (req, res) => {
     const duration = Date.now() - start;
     metrics.increment('api.exit.error');
     logger.error('Exit error', { error: error.message, duration });
-    res.status(400).json({
-      success: false,
-      error: error.message,
-      decision: 'deny'
-    });
+    res.status(400).json({ success: false, error: error.message, decision: 'deny' });
   }
 });
 
-app.get('/api/dashboard', requireAuth, async (req, res) => {
-  const { logger } = req;
-  logger.info('Dashboard request');
-  res.json({
-    totalSessions: 0,
-    activeSessions: 0,
-    totalIdentities: 1,
-    timestamp: new Date().toISOString()
-  });
-});
+// ============================================
+// START SERVER
+// ============================================
 
 seedData().then(() => {
   app.listen(PORT, () => {

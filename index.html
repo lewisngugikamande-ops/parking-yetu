@@ -206,6 +206,7 @@
     </style>
 </head>
 <body>
+    <div id="app-container"></div>
     <!-- Background -->
     <div class="transport-bg transport-right transport-slow transport-y-1 transport-medium-size">🚗 🚙</div>
     <div class="transport-bg transport-left transport-slow transport-y-2 transport-medium-size">🚌 🚐</div>
@@ -229,7 +230,7 @@
                 <input type="text" id="loginEmail" placeholder="Username or Email">
                 <input type="password" id="loginPassword" placeholder="Password">
                 <div class="auth-error" id="loginError">Invalid credentials</div>
-                <button onclick="window.handleLogin()" class="btn-primary">🚀 Login</button>
+                <button onclick="console.log('Login clicked')" class="btn-primary">🚀 Login</button>
                 <div class="auth-switch">
                     Don't have an account? <span onclick="window.switchAuthMode('register')">Register</span>
                 </div>

@@ -1,0 +1,166 @@
+/* ==========================================
+   CINEMATIC BACKGROUND - PREMIUM UI
+   ========================================== */
+
+/* Layer 1: Animated Sky */
+.sky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    transition: background 2s ease;
+}
+
+.sky.day {
+    background: linear-gradient(180deg, 
+        #0a0a1a 0%,
+        #1a1a3e 30%,
+        #2a1a4e 60%,
+        #1a0a2e 100%
+    );
+}
+
+.sky.night {
+    background: linear-gradient(180deg, 
+        #050510 0%,
+        #0a0a1a 30%,
+        #0f0a1f 60%,
+        #050510 100%
+    );
+}
+
+/* Layer 2: Distant City */
+.cityscape {
+    position: fixed;
+    bottom: 120px;
+    left: 0;
+    right: 0;
+    height: 120px;
+    z-index: 0;
+    opacity: 0.08;
+    pointer-events: none;
+}
+
+/* Layer 3: Perspective Roads */
+.roads {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    z-index: 0;
+    opacity: 0.05;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Layer 4 & 5: Traffic System */
+.traffic-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Lane layers */
+.lane {
+    position: absolute;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+}
+
+.lane-near {
+    bottom: 20px;
+    height: 70px;
+}
+
+.lane-mid {
+    bottom: 90px;
+    height: 50px;
+}
+
+.lane-far {
+    bottom: 150px;
+    height: 35px;
+}
+
+/* Car SVG wrapper */
+.car {
+    position: absolute;
+    animation: drive linear infinite;
+    filter: drop-shadow(0 0 20px rgba(255, 200, 50, 0.05));
+}
+
+.car svg {
+    display: block;
+    width: auto;
+    height: 100%;
+}
+
+/* Lane speeds */
+.lane-near .car { animation-duration: 18s; }
+.lane-mid .car { animation-duration: 28s; }
+.lane-far .car { animation-duration: 40s; }
+
+/* Car sizes by lane */
+.lane-near .car { height: 55px; }
+.lane-mid .car { height: 38px; }
+.lane-far .car { height: 24px; }
+
+/* Direction */
+.car-right { animation-direction: normal; }
+.car-left { animation-direction: reverse; }
+
+@keyframes drive {
+    0% { transform: translateX(-100px); opacity: 0; }
+    5% { opacity: 1; }
+    95% { opacity: 1; }
+    100% { transform: translateX(calc(100vw + 100px)); opacity: 0; }
+}
+
+/* ==========================================
+   SCANNER PULSE
+   ========================================== */
+
+.scanner-pulse {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(108, 60, 225, 0.1), transparent);
+    z-index: 0;
+    animation: scannerPulse 6s ease-in-out infinite;
+}
+
+@keyframes scannerPulse {
+    0% { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+    50% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+    100% { opacity: 0; transform: translateX(-50%) scaleX(0.5); }
+}
+
+/* ==========================================
+   SESSION RIPPLE
+   ========================================== */
+
+.ripple {
+    position: fixed;
+    border: 2px solid rgba(108, 60, 225, 0.2);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    animation: rippleExpand 1.5s ease-out forwards;
+}
+
+@keyframes rippleExpand {
+    0% { width: 20px; height: 20px; opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    100% { width: 300px; height: 300px; opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}

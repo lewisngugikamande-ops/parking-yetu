@@ -1,19 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Parking Yetu - Smart Parking</title>
-    <link rel="preconnect" href="https://firestore.googleapis.com">
-    <link rel="preconnect" href="https://firebase.googleapis.com">
-  <script type="module" crossorigin src="/assets/index-DZPozdaT.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-CI_ZyYGx.css">
+    <style>
+        /* Base styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background: #0a0a0f; 
+            color: #e8e8f0; 
+            min-height: 100vh; 
+            transition: background 0.3s, color 0.3s;
+        }
+        body.light-theme { 
+            background: #f0f0f5; 
+            color: #1a1a2e; 
+        }
+        .btn-primary { 
+            background: #4f46e5; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 16px;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: #6366f1; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-secondary {
+            background: #1e1e2f;
+            color: #e8e8f0;
+            border: 1px solid #2a2a3f;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-secondary:hover { background: #2a2a3f; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .auth-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .auth-box {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            animation: fadeIn 0.5s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        body.light-theme .auth-box {
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .auth-box h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .auth-box .sub {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        body.light-theme .auth-box .sub {
+            color: rgba(0,0,0,0.5);
+        }
+        .auth-box input, .auth-box select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #e8e8f0;
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        body.light-theme .auth-box input,
+        body.light-theme .auth-box select {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+            color: #1a1a2e;
+        }
+        .auth-box input:focus, .auth-box select:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+        .auth-error {
+            display: none;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            background: rgba(255,45,85,0.1);
+            color: #ef4444;
+            font-size: 14px;
+        }
+        .auth-error.show { display: block; }
+        .auth-switch {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        body.light-theme .auth-switch {
+            color: rgba(0,0,0,0.5);
+        }
+        .auth-switch span {
+            color: #4f46e5;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .auth-switch span:hover { text-decoration: underline; }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        body.light-theme .theme-toggle {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        body.light-theme .theme-toggle:hover {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        /* Transport background */
+        .transport-bg {
+            position: fixed;
+            font-size: 30px;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 0;
+            white-space: nowrap;
+            animation: drive linear infinite;
+        }
+        @keyframes drive {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+        .transport-right { animation-direction: normal; }
+        .transport-left { animation-direction: reverse; }
+        .transport-slow { animation-duration: 60s; }
+        .transport-medium { animation-duration: 40s; }
+        .transport-fast { animation-duration: 25s; }
+        .transport-y-1 { top: 5%; }
+        .transport-y-2 { top: 15%; }
+        .transport-y-3 { top: 25%; }
+        .transport-y-4 { top: 35%; }
+        .transport-y-5 { top: 45%; }
+        .transport-y-6 { top: 55%; }
+        .transport-y-7 { top: 65%; }
+        .transport-y-8 { top: 75%; }
+        .transport-small { font-size: 20px; }
+        .transport-medium-size { font-size: 30px; }
+        .transport-large { font-size: 40px; }
+        
+        #appContainer { display: none; z-index: 1; position: relative; }
+        #app { min-height: 100vh; padding: 20px; }
+    </style>
+  <script type="module" crossorigin src="/assets/index-CaZnEEKT.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CPSgxc7X.css">
 </head>
 <body>
-
-    <!-- ==========================================
-    BACKGROUND - MOVING VEHICLES
-    ========================================== -->
+    <!-- Background -->
     <div class="transport-bg transport-right transport-slow transport-y-1 transport-medium-size">🚗 🚙</div>
     <div class="transport-bg transport-left transport-slow transport-y-2 transport-medium-size">🚌 🚐</div>
     <div class="transport-bg transport-right transport-medium transport-y-3 transport-large">🚓 🚑</div>
@@ -23,21 +217,17 @@
     <div class="transport-bg transport-right transport-slow transport-y-7 transport-small">🚗 🚗</div>
     <div class="transport-bg transport-left transport-slow transport-y-8 transport-small">🚙 🚙</div>
 
-    <!-- ==========================================
-    THEME TOGGLE
-    ========================================== -->
+    <!-- Theme Toggle -->
     <button class="theme-toggle" id="themeToggle" onclick="window.toggleTheme()">🌙</button>
 
-    <!-- ==========================================
-    AUTH SCREEN
-    ========================================== -->
+    <!-- Auth Screen -->
     <div class="auth-screen" id="authScreen">
         <div class="auth-box">
             <h2>🚗 Parking Yetu</h2>
             <p class="sub" id="authSubtitle">Smart Parking Platform</p>
 
             <div id="loginForm">
-                <input type="email" id="loginEmail" placeholder="Email Address">
+                <input type="text" id="loginEmail" placeholder="Username or Email">
                 <input type="password" id="loginPassword" placeholder="Password">
                 <div class="auth-error" id="loginError">Invalid credentials</div>
                 <button onclick="window.handleLogin()" class="btn-primary">🚀 Login</button>
@@ -51,7 +241,7 @@
                 <input type="email" id="registerEmail" placeholder="Email Address">
                 <input type="password" id="registerPassword" placeholder="Password (min 6 chars)">
                 <select id="registerRole">
-                    <option value="admin">👨‍💼 Admin</option>
+                    <option value="admin">👨💼 Admin</option>
                     <option value="security_manager">👔 Security Manager</option>
                     <option value="guard">🛡️ Security Guard</option>
                     <option value="receptionist">📋 Receptionist</option>
@@ -66,58 +256,11 @@
         </div>
     </div>
 
-    <!-- ==========================================
-    MAIN APP CONTAINER
-    ========================================== -->
+    <!-- Main App Container -->
     <div id="appContainer" style="display:none;">
         <div id="app"></div>
     </div>
 
-    <!-- ==========================================
-    JAVASCRIPT - MODULAR
-    ========================================== -->
+    <!-- Main App Entry -->
 </body>
 </html>
-<script>
-// Direct functions - bypass module loading issues
-window.switchAuthMode = function(mode) {
-    console.log('🔄 switchAuthMode called:', mode);
-    var loginForm = document.getElementById('loginForm');
-    var registerForm = document.getElementById('registerForm');
-    var authSubtitle = document.getElementById('authSubtitle');
-    if (mode === 'login') {
-        loginForm.style.display = 'block';
-        registerForm.style.display = 'none';
-        authSubtitle.textContent = 'Welcome Back';
-        document.getElementById('loginError').classList.remove('show');
-    } else {
-        loginForm.style.display = 'none';
-        registerForm.style.display = 'block';
-        authSubtitle.textContent = 'Create Account';
-        document.getElementById('registerError').classList.remove('show');
-    }
-};
-
-window.handleLogin = function() {
-    alert('🔐 Login clicked - Firebase auth coming soon!');
-};
-
-window.handleRegister = function() {
-    alert('📝 Register clicked - Firebase auth coming soon!');
-};
-
-window.toggleTheme = function() {
-    document.body.classList.toggle('light-theme');
-    var btn = document.getElementById('themeToggle');
-    if (btn) {
-        btn.textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌙';
-    }
-    localStorage.setItem('parking-theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
-};
-
-console.log('✅ Direct functions installed on window');
-console.log('  switchAuthMode:', typeof window.switchAuthMode);
-console.log('  handleLogin:', typeof window.handleLogin);
-console.log('  handleRegister:', typeof window.handleRegister);
-console.log('  toggleTheme:', typeof window.toggleTheme);
-</script>

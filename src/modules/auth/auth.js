@@ -18,7 +18,15 @@ let authScreen, appContainer, loginForm, registerForm;
 let loginEmail, loginPassword, loginError;
 let registerName, registerEmail, registerPassword, registerError;
 
-export function initAuth() {
+// Callback for when auth state changes
+let authStateCallback = null;
+
+// -------- Exported Functions --------
+
+export function initAuth(onAuthStateChangeCallback) {
+    // Store the callback
+    authStateCallback = onAuthStateChangeCallback;
+    
     // Get DOM elements
     authScreen = document.getElementById('authScreen');
     appContainer = document.getElementById('app-container');
@@ -40,23 +48,58 @@ export function initAuth() {
         if (user) {
             showApp();
             console.log('👤 User authenticated:', user.name);
+            if (authStateCallback) {
+                authStateCallback({ authenticated: true, user });
+            }
         } else if (!isInitialLoad) {
             showAuth();
             console.log('🔐 User not authenticated');
+            if (authStateCallback) {
+                authStateCallback({ authenticated: false, user: null });
+            }
         }
         isInitialLoad = false;
     });
 
-    // Check existing user
+    // Check existing user and notify immediately
     const existingUser = getCurrentUser();
     if (existingUser) {
         console.log('👤 Found existing user');
         showApp();
+        if (authStateCallback) {
+            authStateCallback({ authenticated: true, user: existingUser });
+        }
     } else {
         console.log('🔐 No existing user, showing login');
         showAuth();
+        if (authStateCallback) {
+            authStateCallback({ authenticated: false, user: null });
+        }
     }
 }
+
+export async function logoutWithCleanup() {
+    console.log('🚪 Logging out with cleanup...');
+    
+    // Call the app shutdown if available via callback
+    if (authStateCallback) {
+        authStateCallback({ authenticated: false, user: null });
+    }
+    
+    // Perform the actual logout
+    const result = await platformLogout();
+    
+    // Show auth screen
+    showAuth();
+    
+    console.log('✅ Logout complete');
+    return result;
+}
+
+// Re-export from platform/auth.js
+export { onAuthStateChange, getCurrentUser };
+
+// -------- Internal Functions --------
 
 function setupEventListeners() {
     // Login form submit
@@ -102,6 +145,9 @@ async function handleLogin() {
         if (result.success) {
             console.log('✅ Login successful');
             showApp();
+            if (authStateCallback) {
+                authStateCallback({ authenticated: true, user: result.user });
+            }
         } else {
             showLoginError(result.error || 'Login failed. Please try again.');
         }
@@ -133,6 +179,9 @@ async function handleRegister() {
         if (result.success) {
             console.log('✅ Registration successful');
             showApp();
+            if (authStateCallback) {
+                authStateCallback({ authenticated: true, user: result.user });
+            }
         } else {
             showRegisterError(result.error || 'Registration failed. Please try again.');
         }
@@ -172,7 +221,8 @@ function showApp() {
     if (appContainer) appContainer.style.display = 'block';
 }
 
-// Expose functions globally for onclick handlers
+// -------- Global Exposures (for onclick handlers) --------
+
 if (typeof window !== 'undefined') {
     window.handleLogin = handleLogin;
     window.handleRegister = handleRegister;
@@ -193,5 +243,3 @@ if (typeof window !== 'undefined') {
         document.body.classList.toggle('dark-theme');
     };
 }
-
-// Only export initAuth ONCE - no duplicate exports

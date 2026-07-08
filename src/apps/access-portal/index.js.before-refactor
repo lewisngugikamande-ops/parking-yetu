@@ -1,0 +1,111 @@
+// ==========================================
+// ACCESS PORTAL - Complete Access Journey
+// ==========================================
+
+import { Application } from '../../core/application/Application.js';
+import credentialService from '../../services/CredentialService.js';
+import sessionService from '../../services/SessionService.js';
+import policyService from '../../services/PolicyService.js';
+import organizationService from '../../services/OrganizationService.js';
+
+class AccessPortalApp extends Application {
+    constructor() {
+        super({
+            id: 'access-portal',
+            name: 'Access Portal',
+            version: '1.0.0'
+        });
+
+        this.step = 'scan';
+        this.gateData = null;
+        this.credential = null;
+        this.session = null;
+        this.policy = null;
+    }
+
+    onMount() {
+        console.log('🚪 Access Portal mounting...');
+        this.showScan();
+    }
+
+    onUnmount() {
+        console.log('🚪 Access Portal unmounting...');
+    }
+
+    showScan() {
+        this.step = 'scan';
+        this.render(`
+            <div style="max-width:480px;margin:20px auto;padding:20px;text-align:center;">
+                <div style="font-size:64px;margin-bottom:12px;">📷</div>
+                <h1 style="font-size:24px;font-weight:700;margin:0;">Scan Gate QR</h1>
+                <p style="color:var(--text-muted);margin-top:8px;">Point your camera at the QR code at the gate</p>
+                <div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:40px;margin:20px 0;border:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:48px;margin-bottom:8px;">⬜</div>
+                    <button id="mockScanBtn" style="padding:12px 32px;border-radius:12px;border:none;background:#6C3CE1;color:white;font-weight:600;cursor:pointer;font-size:16px;">📸 Simulate Scan</button>
+                </div>
+                <div id="scanResult" style="margin-top:12px;"></div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:12px;">No login required</div>
+            </div>
+        `);
+
+        const btn = this.find('#mockScanBtn');
+        if (btn) {
+            btn.addEventListener('click', () => this.handleMockScan());
+        }
+    }
+
+    async handleMockScan() {
+        this.gateData = {
+            organizationId: 'org_pcea_langata',
+            locationId: 'loc_langata_main',
+            accessPointId: 'ap_gate_1',
+            name: 'Gate 1 - Parking',
+            capacity: 20,
+            direction: 'entry'
+        };
+        
+        const result = this.find('#scanResult');
+        if (result) {
+            result.innerHTML = `
+                <div style="padding:12px;border-radius:12px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.1);color:#fff;font-size:14px;">
+                    ✅ Gate scanned successfully!
+                    <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">${this.gateData.name}</div>
+                </div>
+            `;
+        }
+        
+        setTimeout(() => this.showIdentify(), 1000);
+    }
+
+    showIdentify() {
+        this.step = 'identify';
+        const gate = this.gateData || { name: 'Gate' };
+        
+        this.render(`
+            <div style="max-width:480px;margin:20px auto;padding:20px;">
+                <div style="text-align:center;margin-bottom:24px;">
+                    <div style="font-size:32px;margin-bottom:4px;">🏛️</div>
+                    <h1 style="font-size:20px;font-weight:700;margin:0;color:#fff;">${gate.name}</h1>
+                    <p style="color:rgba(255,255,255,0.6);margin-top:4px;font-size:13px;">Enter your vehicle plate</p>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,0.08);">
+                    <input id="plateInput" placeholder="e.g. KDG 832A" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.05);color:#fff;font-size:16px;text-transform:uppercase;box-sizing:border-box;">
+                    <button id="identifyBtn" style="width:100%;padding:14px;border-radius:12px;border:none;background:#6C3CE1;color:white;font-weight:600;cursor:pointer;margin-top:8px;font-size:16px;">🔍 Identify</button>
+                    <button id="registerBtn" style="width:100%;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;margin-top:4px;font-size:14px;">📝 Register New</button>
+                </div>
+                <div id="resultArea" style="margin-top:12px;"></div>
+            </div>
+        `);
+    }
+}
+
+const accessPortalApp = new AccessPortalApp();
+
+// Default export
+export default function initAccessPortal(container) {
+    accessPortalApp.mount(container);
+    return accessPortalApp;
+}
+
+// Named export (for router compatibility)
+export { initAccessPortal };

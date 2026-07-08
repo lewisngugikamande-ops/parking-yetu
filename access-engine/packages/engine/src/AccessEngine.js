@@ -1,173 +1,148 @@
-console.log("🔥 LOADED AccessEngine.js from:", __filename);
-
-const { EventBus } = require('@access-engine/kernel');
-const { Result } = require('@access-engine/foundation');
-
 class AccessEngine {
-  constructor({
-    identityRepository,
-    credentialRepository,
-    membershipRepository,
-    policyRepository,
-    sessionRepository,
-    eventBus
-  }) {
-    this.identityRepository = identityRepository;
-    this.credentialRepository = credentialRepository;
-    this.membershipRepository = membershipRepository;
-    this.policyRepository = policyRepository;
-    this.sessionRepository = sessionRepository;
-    this.eventBus = eventBus || new EventBus();
+  constructor(options = {}) {
+    console.log('🏗️ AccessEngine constructor called');
+    this.identityRepo = options.identityRepository;
+    this.credentialRepo = options.credentialRepository;
+    this.membershipRepo = options.membershipRepository;
+    this.policyRepo = options.policyRepository;
+    this.sessionRepo = options.sessionRepository;
+    this.eventBus = options.eventBus;
+    this.logger = options.logger || console;
   }
-  
-  static builder() {
-    return new AccessEngineBuilder();
-  }
-  
+
   async process(request) {
-    console.log('📥 REAL ENGINE processing:', request);
+    const { credential, accessPointId, action, organizationId, metadata } = request;
     
-    const ctx = {
-      request: request,
-      metadata: {},
-      result: null
-    };
-    
+    console.log('📥 Engine processing:', { credential, accessPointId, action, organizationId });
+
     try {
-      await this.validateRequest(ctx);
-      await this.resolveCredential(ctx);
-      await this.resolveIdentity(ctx);
-      await this.resolveMembership(ctx);
-      await this.evaluatePolicy(ctx);
-      await this.createSession(ctx);
-      await this.emitEvents(ctx);
+      // Step 1: Find the credential
+      const foundCredential = await this.credentialRepo.findByValue(credential.value);
+      if (!foundCredential) {
+        console.log('❌ Credential not found:', credential.value);
+        return { success: false, error: 'Credential not found', decision: 'deny' };
+      }
+      console.log('✅ Credential found:', foundCredential.id);
+
+      // Step 2: Get the identity
+      const identity = await this.identityRepo.findById(foundCredential.identityId);
+      if (!identity) {
+        console.log('❌ Identity not found:', foundCredential.identityId);
+        return { success: false, error: 'Identity not found', decision: 'deny' };
+      }
+      console.log('✅ Identity found:', identity.id);
+
+      // Step 3: Get membership
+      const membership = await this.membershipRepo.findByIdentityAndOrganization(
+        identity.id,
+        organizationId
+      );
+      if (!membership) {
+        console.log('❌ Membership not found for:', identity.id, organizationId);
+        return { success: false, error: 'Membership not found', decision: 'deny' };
+      }
+      console.log('✅ Membership found:', membership.id, 'roles:', membership.roles);
+
+      // Step 4: Get policies
+      console.log(`🔍 Looking for policies for organization: ${organizationId}`);
+      const policies = await this.policyRepo.findByOrganization(organizationId);
+      console.log(`📋 Policies found: ${policies ? policies.length : 0}`);
       
-      return ctx.result || { success: true };
+      if (policies && policies.length > 0) {
+        console.log('📋 Policy details:');
+        policies.forEach((p, i) => {
+          console.log(`  Policy ${i + 1}: id=${p.id}, name=${p.name}`);
+        });
+      } else {
+        console.log('⚠️ No policies found for organization:', organizationId);
+      }
+
+      // Step 5: Evaluate policies
+      let allowed = false;
+      for (const policy of (policies || [])) {
+        console.log(`🔍 Evaluating policy: ${policy.name} (${policy.id})`);
+        for (const rule of (policy.rules || [])) {
+          console.log(`  📜 Rule: effect=${rule.effect}, actions=${JSON.stringify(rule.actions)}`);
+          
+          const actionMatches = rule.actions.includes('*') || rule.actions.includes(action);
+          if (!actionMatches) {
+            console.log(`  ❌ Action '${action}' not in ${JSON.stringify(rule.actions)}`);
+            continue;
+          }
+          console.log(`  ✅ Action '${action}' matches`);
+          
+          if (rule.conditions && rule.conditions.roles) {
+            const roleMatches = membership.roles.some(role => 
+              rule.conditions.roles.includes(role)
+            );
+            if (!roleMatches) {
+              console.log(`  ❌ Roles ${JSON.stringify(membership.roles)} don't match ${JSON.stringify(rule.conditions.roles)}`);
+              continue;
+            }
+            console.log(`  ✅ Role match`);
+          }
+          
+          if (rule.effect === 'allow') {
+            console.log(`  ✅ ALLOW: ${action} allowed`);
+            allowed = true;
+            break;
+          }
+        }
+        if (allowed) break;
+      }
+
+      if (!allowed) {
+        console.log('❌ No matching policy found');
+        return { success: false, error: 'No matching policy found', decision: 'deny' };
+      }
+
+      console.log('✅ Access granted!');
+
+      // Step 6: Create session
+      const session = {
+        id: 'session_' + Date.now(),
+        identityId: identity.id,
+        credentialId: foundCredential.id,
+        organizationId: organizationId,
+        accessPointId: accessPointId,
+        action: action,
+        metadata: metadata,
+        status: 'active',
+        entryTime: new Date(),
+        vehiclePlate: metadata?.vehicle?.licensePlate || 'Unknown'
+      };
+
+      await this.sessionRepo.save(session);
+      console.log('📝 Session created:', session.id);
+
+      // Emit event - safely check if eventBus exists and has emit
+      if (this.eventBus && typeof this.eventBus.emit === 'function') {
+        try {
+          await this.eventBus.emit('session:started', { 
+            sessionId: session.id, 
+            identityId: identity.id 
+          });
+          console.log('📤 Event emitted: session:started');
+        } catch (e) {
+          console.warn('⚠️ Event emission failed:', e.message);
+        }
+      } else {
+        console.log('ℹ️ No eventBus available, skipping event emission');
+      }
+
+      return {
+        success: true,
+        decision: 'allow',
+        sessionId: session.id,
+        identityId: identity.id,
+        events: []
+      };
+
     } catch (error) {
-      console.error("🔴 ENGINE ERROR:", error.message);
+      console.error('❌ Engine error:', error.message);
       return { success: false, error: error.message, decision: 'deny' };
     }
   }
-  
-  async validateRequest(ctx) {
-    const requestData = ctx.request;
-    const { credential, accessPointId, action, organizationId } = requestData;
-    
-    let credentialValue = null;
-    if (typeof credential === 'string') {
-      credentialValue = credential;
-    } else if (credential && typeof credential === 'object') {
-      credentialValue = credential.value;
-    }
-    
-    if (!credentialValue) throw new Error('Credential is required');
-    if (!accessPointId) throw new Error('Access point is required');
-    if (!action) throw new Error('Action is required');
-    if (!['enter', 'exit'].includes(action)) {
-      throw new Error(`Invalid action: ${action}`);
-    }
-    
-    ctx.credentialValue = credentialValue;
-    ctx.organizationId = organizationId || 'default-org';
-    ctx.requestData = requestData;
-  }
-  
-  async resolveCredential(ctx) {
-    const credential = await this.credentialRepository.findByValue(ctx.credentialValue);
-    if (!credential) throw new Error('Credential not found');
-    if (!credential.isValid()) throw new Error('Credential is expired or revoked');
-    ctx.credential = credential;
-    ctx.identityId = credential.identityId;
-  }
-
-  async resolveIdentity(ctx) {
-   const identity = await this.identityRepository.findById(ctx.identityId);
-
-   if (!identity) throw new Error('Identity not found');
-
-   if (!identity.isActive) throw new Error('Identity is not active');
-  
-   ctx.identity = identity;
-}
-
-// 🆕 Debug logging
-async resolveIdentity(ctx) {
-  const identity = await this.identityRepository.findById(ctx.identityId);
-
-
-  if (!identity) throw new Error('Identity not found');
-
-  ctx.identity = identity;
-}
-  
-  async resolveMembership(ctx) {
-    const membership = await this.membershipRepository.findByIdentityAndOrganization(
-      ctx.identity.id,
-      ctx.organizationId
-    );
-    if (!membership) throw new Error('No membership found for this organization');
-    if (!membership.isActive) throw new Error('Membership is not active');
-    ctx.membership = membership;
-  }
-  
-  async evaluatePolicy(ctx) {
-    const policies = await this.policyRepository.findByOrganization(ctx.organizationId);
-    for (const policy of policies) {
-      const context = {
-        identity: ctx.identity,
-        membership: ctx.membership,
-        action: ctx.requestData?.action || ctx.request.action
-      };
-      const result = policy.evaluate(context);
-      if (result.matched) {
-        if (result.effect === 'deny') {
-          throw new Error(result.reason || 'Policy denied access');
-        }
-        ctx.policy = policy;
-        ctx.policyResult = result;
-        return;
-      }
-    }
-    throw new Error('No matching policy found');
-  }
-  
-  async createSession(ctx) {
-    const Session = require('./session/Session');
-    const session = Session.create({
-      identityId: ctx.identity.id,
-      resourceId: ctx.requestData?.accessPointId || ctx.request.accessPointId,
-      status: 'active',
-      context: {
-        policyId: ctx.policy?.id,
-        action: ctx.requestData?.action || ctx.request.action,
-        organizationId: ctx.organizationId
-      }
-    });
-    await this.sessionRepository.save(session);
-    ctx.session = session;
-  }
-  
-  async emitEvents(ctx) {
-    console.log('✅ Engine processing complete (events skipped)');
-    ctx.result = {
-      success: true,
-      decision: 'allow',
-      sessionId: ctx.session?.id,
-      identityId: ctx.identity?.id,
-      events: []
-    };
-  }
-}
-
-class AccessEngineBuilder {
-  constructor() { this.config = {}; }
-  withIdentityRepository(repo) { this.config.identityRepository = repo; return this; }
-  withCredentialRepository(repo) { this.config.credentialRepository = repo; return this; }
-  withMembershipRepository(repo) { this.config.membershipRepository = repo; return this; }
-  withPolicyRepository(repo) { this.config.policyRepository = repo; return this; }
-  withSessionRepository(repo) { this.config.sessionRepository = repo; return this; }
-  withEventBus(eventBus) { this.config.eventBus = eventBus; return this; }
-  build() { return new AccessEngine(this.config); }
 }
 
 module.exports = AccessEngine;
