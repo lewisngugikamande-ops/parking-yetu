@@ -1,6 +1,6 @@
-// ============================================
-// Authentication Module - Uses Access Engine
-// ============================================
+// ==========================================
+// AUTH MODULE - Authentication UI and Logic
+// ==========================================
 
 import { 
     login as platformLogin,
@@ -9,180 +9,189 @@ import {
     onAuthStateChange,
     getCurrentUser
 } from '../../platform/auth.js';
-import { translateError } from '../../core/errors.js';
 
-var loginInProgress = false;
-var isInitialLoad = true;
-var authChecked = false;
+let loginInProgress = false;
+let isInitialLoad = true;
+
+// DOM elements
+let authScreen, appContainer, loginForm, registerForm;
+let loginEmail, loginPassword, loginError;
+let registerName, registerEmail, registerPassword, registerError;
 
 export function initAuth() {
-    window.handleLogin = handleLogin;
-    window.handleRegister = handleRegister;
-    window.switchAuthMode = switchAuthMode;
-    window.handleLogout = handleLogout;
+    // Get DOM elements
+    authScreen = document.getElementById('authScreen');
+    appContainer = document.getElementById('app-container');
+    loginForm = document.getElementById('loginForm');
+    registerForm = document.getElementById('registerForm');
+    loginEmail = document.getElementById('loginEmail');
+    loginPassword = document.getElementById('loginPassword');
+    loginError = document.getElementById('loginError');
+    registerName = document.getElementById('registerName');
+    registerEmail = document.getElementById('registerEmail');
+    registerPassword = document.getElementById('registerPassword');
+    registerError = document.getElementById('registerError');
 
-    // Listen for auth state changes
-    onAuthStateChange(function(user) {
-        console.log('🔐 Auth state changed:', user ? 'Authenticated' : 'Logged out');
-        
+    // Set up event listeners
+    setupEventListeners();
+
+    // Check auth state
+    onAuthStateChange((user) => {
         if (user) {
-            console.log('✅ User authenticated:', user.subject || user.username || 'User');
-            authChecked = true;
-            showAppAndLoadWorkstation();
-        } else {
-            console.log('🔐 User logged out');
-            authChecked = true;
-            showLogin();
+            showApp();
+            console.log('👤 User authenticated:', user.name);
+        } else if (!isInitialLoad) {
+            showAuth();
+            console.log('🔐 User not authenticated');
         }
+        isInitialLoad = false;
     });
 
-    // Check if we already have a user (from localStorage)
+    // Check existing user
     const existingUser = getCurrentUser();
     if (existingUser) {
-        console.log('👤 Found existing user, waiting for auth check...');
-        // The onAuthStateChange will handle showing the app
+        console.log('👤 Found existing user');
+        showApp();
     } else {
         console.log('🔐 No existing user, showing login');
-        showLogin();
+        showAuth();
     }
-
-    console.log('✅ Auth initialized');
 }
 
-function showAppAndLoadWorkstation() {
-    const authScreen = document.getElementById('authScreen');
-    const appContainer = document.getElementById('appContainer');
-    
-    if (authScreen) authScreen.style.display = 'none';
-    if (appContainer) appContainer.style.display = 'block';
-    
-    // Only load workstation if it hasn't been loaded yet
-    if (!window.__workstationLoaded) {
-        try {
-            import('../../modules/workstation/index.js').then(function(module) {
-                var init = module.default;
-                init();
-                window.__workstationLoaded = true;
-                console.log('✅ Workstation loaded');
-            }).catch(function(error) {
-                console.error('❌ Workstation error:', error);
-            });
-        } catch (error) {
-            console.error('❌ Workstation error:', error);
+function setupEventListeners() {
+    // Login form submit
+    const loginBtn = document.querySelector('#loginForm .btn-primary');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', handleLogin);
+    }
+
+    // Register form submit
+    const registerBtn = document.querySelector('#registerForm .btn-primary');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', handleRegister);
+    }
+
+    // Enter key support
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            if (loginForm && loginForm.style.display !== 'none') {
+                handleLogin();
+            } else if (registerForm && registerForm.style.display !== 'none') {
+                handleRegister();
+            }
         }
-    }
-}
-
-function showLogin() {
-    const authScreen = document.getElementById('authScreen');
-    const appContainer = document.getElementById('appContainer');
-    
-    if (authScreen) authScreen.style.display = 'flex';
-    if (appContainer) appContainer.style.display = 'none';
+    });
 }
 
 async function handleLogin() {
-    console.log('🔐 Login clicked');
-    var username = document.getElementById('loginEmail').value.trim();
-    var password = document.getElementById('loginPassword').value.trim();
-    var errorDiv = document.getElementById('loginError');
-    if (errorDiv) errorDiv.classList.remove('show');
+    if (loginInProgress) return;
+    
+    const email = loginEmail?.value?.trim();
+    const password = loginPassword?.value?.trim();
 
-    if (!username) {
-        if (errorDiv) {
-            errorDiv.textContent = 'Please enter your username';
-            errorDiv.classList.add('show');
-        }
+    if (!email || !password) {
+        showLoginError('Please enter both email and password');
         return;
     }
 
+    loginInProgress = true;
+    hideLoginError();
+
     try {
-        loginInProgress = true;
-        isInitialLoad = false;
-        await platformLogin(username, password || 'mock');
-        console.log('✅ Login successful');
-        // The onAuthStateChange will handle showing the app
-    } catch (error) {
-        loginInProgress = false;
-        console.error('❌ Login error:', error);
-        if (errorDiv) {
-            var translated = translateError(error);
-            errorDiv.textContent = translated.message + ' ' + translated.action;
-            errorDiv.classList.add('show');
+        const result = await platformLogin(email, password);
+        if (result.success) {
+            console.log('✅ Login successful');
+            showApp();
+        } else {
+            showLoginError(result.error || 'Login failed. Please try again.');
         }
+    } catch (error) {
+        console.error('Login error:', error);
+        showLoginError('An unexpected error occurred');
+    } finally {
+        loginInProgress = false;
     }
 }
 
 async function handleRegister() {
-    console.log('📝 Register clicked');
-    var name = document.getElementById('registerName').value.trim();
-    var email = document.getElementById('registerEmail').value.trim();
-    var password = document.getElementById('registerPassword').value.trim();
-    var role = document.getElementById('registerRole').value;
-    var errorDiv = document.getElementById('registerError');
-    if (errorDiv) errorDiv.classList.remove('show');
+    const name = registerName?.value?.trim();
+    const email = registerEmail?.value?.trim();
+    const password = registerPassword?.value?.trim();
 
     if (!name || !email || !password) {
-        if (errorDiv) {
-            errorDiv.textContent = 'Please fill in all fields';
-            errorDiv.classList.add('show');
-        }
+        showRegisterError('Please fill in all fields');
         return;
     }
 
     if (password.length < 6) {
-        if (errorDiv) {
-            errorDiv.textContent = 'Password must be at least 6 characters';
-            errorDiv.classList.add('show');
-        }
+        showRegisterError('Password must be at least 6 characters');
         return;
     }
 
     try {
-        await platformRegister(name, email, password, role);
-        console.log('✅ Registration successful');
-        alert('Registration successful! Please login.');
-        switchAuthMode('login');
-        var pwdField = document.getElementById('registerPassword');
-        if (pwdField) pwdField.value = '';
-    } catch (error) {
-        console.error('❌ Registration error:', error);
-        if (errorDiv) {
-            var translated = translateError(error);
-            errorDiv.textContent = translated.message + ' ' + translated.action;
-            errorDiv.classList.add('show');
+        const result = await platformRegister(name, email, password);
+        if (result.success) {
+            console.log('✅ Registration successful');
+            showApp();
+        } else {
+            showRegisterError(result.error || 'Registration failed. Please try again.');
         }
-    }
-}
-
-function switchAuthMode(mode) {
-    console.log('🔄 Switching to:', mode);
-    var loginForm = document.getElementById('loginForm');
-    var registerForm = document.getElementById('registerForm');
-    var authSubtitle = document.getElementById('authSubtitle');
-    
-    if (mode === 'login') {
-        if (loginForm) loginForm.style.display = 'block';
-        if (registerForm) registerForm.style.display = 'none';
-        if (authSubtitle) authSubtitle.textContent = 'Welcome Back';
-        var err = document.getElementById('loginError');
-        if (err) err.classList.remove('show');
-    } else {
-        if (loginForm) loginForm.style.display = 'none';
-        if (registerForm) registerForm.style.display = 'block';
-        if (authSubtitle) authSubtitle.textContent = 'Create Account';
-        var err2 = document.getElementById('registerError');
-        if (err2) err2.classList.remove('show');
-    }
-}
-
-async function handleLogout() {
-    try {
-        await platformLogout();
-        window.__workstationLoaded = false;
-        isInitialLoad = true;
-        window.location.reload();
     } catch (error) {
-        console.error('Logout error:', error);
+        console.error('Registration error:', error);
+        showRegisterError('An unexpected error occurred');
     }
 }
+
+function showLoginError(message) {
+    if (loginError) {
+        loginError.textContent = message;
+        loginError.style.display = 'block';
+    }
+}
+
+function hideLoginError() {
+    if (loginError) {
+        loginError.style.display = 'none';
+    }
+}
+
+function showRegisterError(message) {
+    if (registerError) {
+        registerError.textContent = message;
+        registerError.style.display = 'block';
+    }
+}
+
+function showAuth() {
+    if (authScreen) authScreen.style.display = 'flex';
+    if (appContainer) appContainer.style.display = 'none';
+}
+
+function showApp() {
+    if (authScreen) authScreen.style.display = 'none';
+    if (appContainer) appContainer.style.display = 'block';
+}
+
+// Expose functions globally for onclick handlers
+if (typeof window !== 'undefined') {
+    window.handleLogin = handleLogin;
+    window.handleRegister = handleRegister;
+    window.switchAuthMode = function(mode) {
+        if (mode === 'login') {
+            if (loginForm) loginForm.style.display = 'block';
+            if (registerForm) registerForm.style.display = 'none';
+            const subtitle = document.getElementById('authSubtitle');
+            if (subtitle) subtitle.textContent = 'Smart Parking Platform';
+        } else {
+            if (loginForm) loginForm.style.display = 'none';
+            if (registerForm) registerForm.style.display = 'block';
+            const subtitle = document.getElementById('authSubtitle');
+            if (subtitle) subtitle.textContent = 'Create your account';
+        }
+    };
+    window.toggleTheme = function() {
+        document.body.classList.toggle('dark-theme');
+    };
+}
+
+// Only export initAuth ONCE - no duplicate exports
