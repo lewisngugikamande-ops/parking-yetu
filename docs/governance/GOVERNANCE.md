@@ -129,3 +129,24 @@ Any implementation that contradicts an Accepted ADR requires:
 - ADR update,
 - new ADR,
 - or explicit superseding decision.
+---
+
+# G-07
+ADR Ownership and Review
+
+Every Accepted ADR must have an owner responsible for maintaining accuracy.
+
+Required ADR metadata:
+
+- Status
+- Date
+- Owner
+- Review responsibility
+
+ADR owners are responsible for:
+
+- keeping decisions aligned with implementation,
+- updating ADRs when architecture changes,
+- marking obsolete decisions as Superseded or Deprecated.
+
+Architecture changes without an updated ADR owner review are considered governance violations.
