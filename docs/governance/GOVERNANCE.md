@@ -83,3 +83,21 @@ Low:
 Reasoning or alternatives cannot be verified from available evidence.
 
 The purpose is to distinguish verified facts from reconstructed context.
+---
+
+# G-05
+ADR Location Standard
+
+All architectural decision records must be stored under:
+
+docs/architecture/decisions/
+
+ADR files must follow the naming convention:
+
+ADR-NNN-short-description.md
+
+Example:
+
+ADR-008-bounded-contexts.md
+
+No architectural ADRs may exist outside the canonical ADR directory.
