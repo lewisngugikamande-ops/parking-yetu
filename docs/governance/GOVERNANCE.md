@@ -150,3 +150,30 @@ ADR owners are responsible for:
 - marking obsolete decisions as Superseded or Deprecated.
 
 Architecture changes without an updated ADR owner review are considered governance violations.
+---
+
+# G-08
+ADR Template Standard
+
+All new ADRs must follow the canonical ADR structure.
+
+Required sections:
+
+```markdown
+# ADR-NNN: Title
+
+Status:
+
+Date:
+
+Owner:
+
+## Context
+
+## Decision
+
+## Alternatives Considered
+
+## Consequences
+
+## Implementation Notes
