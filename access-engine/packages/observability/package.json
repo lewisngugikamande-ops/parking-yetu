@@ -1,0 +1,9 @@
+{
+  "name": "@access-engine/observability",
+  "version": "0.1.0",
+  "description": "Logging, metrics, tracing, and health reporting",
+  "main": "src/index.js",
+  "peerDependencies": {
+    "@access-engine/foundation": "*"
+  }
+}
