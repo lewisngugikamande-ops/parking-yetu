@@ -177,3 +177,49 @@ Owner:
 ## Consequences
 
 ## Implementation Notes
+---
+
+# G-09
+ADR Compliance Checks
+
+Before merging architectural changes, verify:
+
+## ADR Location
+
+- ADR exists under:
+  `docs/architecture/decisions/`
+
+## ADR Naming
+
+- Filename follows:
+  `ADR-NNN-short-description.md`
+
+## ADR Metadata
+
+Required:
+
+- Status
+- Date
+- Owner
+
+## ADR Content
+
+Required sections:
+
+- Context
+- Decision
+- Alternatives Considered
+- Consequences
+- Implementation Notes
+
+## Evidence
+
+Architectural decisions must reference:
+
+- source code,
+- commits,
+- tests,
+- documentation,
+- or audit findings where applicable.
+
+A change violating ADR governance must not be considered architecture-complete.
