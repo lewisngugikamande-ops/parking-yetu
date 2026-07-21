@@ -67,3 +67,26 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+
+# Environment
+.env
+access-engine/node_modules/
+access-engine/dist/
+access-engine/coverage/
+access-engine/node_modules/
+access-engine/dist/
+access-engine/coverage/
+access-engine/node_modules/
+access-engine/dist/
+access-engine/coverage/

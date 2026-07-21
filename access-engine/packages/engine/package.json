@@ -1,0 +1,10 @@
+{
+  "name": "@access-engine/engine",
+  "version": "0.1.0",
+  "description": "The Access Engine - Domain models for access control",
+  "main": "src/index.js",
+  "peerDependencies": {
+    "@access-engine/foundation": "*",
+    "@access-engine/kernel": "*"
+  }
+}

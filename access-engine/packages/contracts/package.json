@@ -1,0 +1,9 @@
+{
+  "name": "@access-engine/contracts",
+  "version": "0.1.0",
+  "description": "Repository interfaces for the Access Engine",
+  "main": "src/index.js",
+  "peerDependencies": {
+    "@access-engine/foundation": "*"
+  }
+}
