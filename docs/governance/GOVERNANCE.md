@@ -101,3 +101,31 @@ Example:
 ADR-008-bounded-contexts.md
 
 No architectural ADRs may exist outside the canonical ADR directory.
+---
+
+# G-06
+ADR Lifecycle Rules
+
+Architectural decisions must follow a defined lifecycle.
+
+Allowed ADR statuses:
+
+- Proposed
+- Accepted
+- Accepted (Backfilled)
+- Superseded
+- Deprecated
+- Rejected
+
+Rules:
+
+- Proposed ADRs must not be treated as implementation authority.
+- Accepted ADRs represent current architectural decisions.
+- Superseded ADRs remain for historical traceability.
+- Deprecated ADRs should not guide new implementation.
+- Rejected ADRs document considered alternatives.
+
+Any implementation that contradicts an Accepted ADR requires:
+- ADR update,
+- new ADR,
+- or explicit superseding decision.
