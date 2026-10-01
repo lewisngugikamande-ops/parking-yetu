@@ -41,6 +41,7 @@ export function openKnownVehicleModal() {
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <div style="font-family:Orbitron,monospace;font-size:20px;font-weight:700;" id="knownPlateDisplay">KDG832A</div>
+                    <div style="font-size:12px;color:#FFD700;font-weight:600;margin-top:2px;display:none;" id="knownBadges"></div>
                     <div style="font-size:13px;color:var(--text-muted);" id="knownDriverDisplay">👤 John Otieno</div>
                     <div style="font-size:13px;color:var(--text-muted);" id="knownPhoneDisplay">📱 0712345678</div>
                 </div>
@@ -103,6 +104,15 @@ async function handleKnownSearch() {
         document.getElementById('knownPhoneDisplay').textContent = `📱 ${lastSession?.driverPhone || 'N/A'}`;
         document.getElementById('knownLastVisit').textContent = lastSession ? getTimeAgo(lastSession.entryTime) : 'No visits';
 
+        const badges = [];
+        if (lastSession?.isVIP) badges.push('⭐ VIP');
+        if (lastSession?.isStaff) badges.push('👤 Staff');
+        const badgeEl = document.getElementById('knownBadges');
+        if (badgeEl) {
+            badgeEl.textContent = badges.join(' • ');
+            badgeEl.style.display = badges.length ? 'block' : 'none';
+        }
+
         resultDiv.style.display = 'block';
         setKnownVehicleData({ vehicle, lastSession });
 
@@ -128,6 +138,8 @@ async function handleKnownQuickEntry() {
             locationId: config.app.defaultLocation,
             organizationId: config.app.defaultOrganization
         });
+        if (lastSession?.isVIP) session.setVIP();
+        if (lastSession?.isStaff) session.setStaff();
 
         const saved = await sessionRepo.create(session);
         await Audit.vehicleEntry(saved);
