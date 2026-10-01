@@ -169,6 +169,15 @@ async function handleEntrySubmit() {
             vehicle = await vehicleRepo.create(vehicle);
         }
 
+        // Block blacklisted vehicles
+        if (vehicle.blacklisted) {
+            errorDiv.textContent = `🚫 Entry denied: this vehicle is blacklisted${vehicle.blacklistReason ? ' — ' + vehicle.blacklistReason : ''}`;
+            errorDiv.style.display = 'block';
+            submitBtn.textContent = '✅ Check In';
+            submitBtn.disabled = false;
+            return;
+        }
+
         // Create session
         const session = new Session({
             vehicleId: vehicle.id,

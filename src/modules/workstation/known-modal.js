@@ -128,6 +128,11 @@ async function handleKnownQuickEntry() {
 
     const { vehicle, lastSession } = data;
 
+    if (vehicle.blacklisted) {
+        showToast(`🚫 Entry denied: this vehicle is blacklisted${vehicle.blacklistReason ? ' — ' + vehicle.blacklistReason : ''}`, 'error');
+        return;
+    }
+
     try {
         const session = new Session({
             vehicleId: vehicle.id,
