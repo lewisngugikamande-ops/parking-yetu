@@ -11,7 +11,7 @@ import { Audit } from '../../core/audit.js';
 import { emit } from '../../core/events.js';
 import { config } from '../../config/index.js';
 import { showToast } from './toast.js';
-import { refreshData, incrementTodayCount } from './stats.js';
+import { incrementTodayCount } from './stats.js';
 
 const vehicleRepo = getVehicleRepository();
 const sessionRepo = getSessionRepository();
@@ -199,7 +199,6 @@ async function handleEntrySubmit() {
 
         closeModal('entryModal');
         showToast(`✅ ${validPlate} checked in successfully!`, 'success');
-        await refreshData();
 
     } catch (error) {
         errorDiv.textContent = `❌ ${error.message}`;

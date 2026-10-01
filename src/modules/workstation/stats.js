@@ -6,6 +6,7 @@ import { getSessionRepository } from '../../repositories/session-repository.js';
 import { config } from '../../config/index.js';
 import { updateActivityFeed } from './activity-feed.js';
 import { getTodayStart, getTomorrowStart, getTimeAgo } from '../../utils/time.js';
+import { on } from '../../core/events.js';
 
 let sessionRepo = getSessionRepository();
 let activeSessions = [];
@@ -113,4 +114,10 @@ export function incrementTodayCount() {
     cachedTodayCount += 1;
     lastTodayCountUpdate = Date.now();
     safeUpdateElement('todayCount', cachedTodayCount);
+}
+
+export function initStatsEventSubscriptions() {
+    const unsubEntered = on('vehicle:entered', refreshData);
+    const unsubExited = on('vehicle:exited', refreshData);
+    return [unsubEntered, unsubExited];
 }

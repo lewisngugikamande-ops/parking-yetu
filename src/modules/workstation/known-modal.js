@@ -17,7 +17,7 @@ import { Audit } from '../../core/audit.js';
 import { emit } from '../../core/events.js';
 import { config } from '../../config/index.js';
 import { showToast } from './toast.js';
-import { refreshData, incrementTodayCount } from './stats.js';
+import { incrementTodayCount } from './stats.js';
 import { openEntryModal } from './entry-modal.js';
 import { getTimeAgo } from '../../utils/time.js';
 
@@ -154,7 +154,6 @@ async function handleKnownQuickEntry() {
 
         closeModal('knownVehicleModal');
         showToast(`✅ ${vehicle.licensePlate} checked in!`, 'success');
-        await refreshData();
 
     } catch (error) {
         showToast('❌ Error: ' + error.message, 'error');

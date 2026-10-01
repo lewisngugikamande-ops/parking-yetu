@@ -15,7 +15,6 @@ import { Audit } from '../../core/audit.js';
 import { emit } from '../../core/events.js';
 import { config } from '../../config/index.js';
 import { showToast } from './toast.js';
-import { refreshData } from './stats.js';
 
 const sessionRepo = getSessionRepository();
 
@@ -107,7 +106,6 @@ async function handleScannerExit() {
 
         closeModal('scannerModal');
         showToast(`✅ ${exited.vehiclePlate} exited successfully!`, 'success');
-        await refreshData();
 
     } catch (error) {
         showToast('❌ Error: ' + error.message, 'error');
